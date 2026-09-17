@@ -8,31 +8,32 @@ Update this file as work happens — one line per task, matching plan.md exactly
 
 ---
 
-## Phase 0 — Foundations & Setup — ⬜ Not started
-- ⬜ Repo structure agreed
-- ⬜ Backend skeleton boots
-- ⬜ Portal skeleton boots
-- ⬜ Extension skeleton loads
-- ⬜ DuckDB initialized
-- ⬜ WhatsApp Cloud API sandbox working
-- ⬜ Secrets convention agreed
+## Phase 0 — Foundations & Setup — 🟨 In progress
+- ✅ Repo structure agreed
+- ✅ Backend skeleton boots
+- ✅ Portal skeleton boots
+- ✅ Extension skeleton loads
+- ✅ DuckDB initialized
+- 🟨 WhatsApp Cloud API sandbox working
+- ✅ Secrets convention agreed
 
 **Exit criterion met?** ⬜ No
 **Notes:**
-- _(add dated entries here as setup happens)_
+- 2026-09-17: Repo structure, skeletons, DuckDB, and portal created. Waiting on user to configure Meta Developer Sandbox for WhatsApp credentials.
 
 ---
 
-## Phase 1 — Integrate (Data Capture) — ⬜ Not started
-- ⬜ Normalized listing schema defined
-- ⬜ DOM-reading logic (site type 1)
-- ⬜ DOM-reading logic (site type 2)
-- ⬜ Extension → `/ingest` working
-- ⬜ Backend validates & persists to DuckDB
-- ⬜ Graceful failure on unexpected page structure
+## Phase 1 — Integrate (Data Capture) — ✅ Done
+- ✅ Normalized listing schema defined
+- ✅ DOM-reading logic (site type 1)
+- ✅ DOM-reading logic (site type 2)
+- ✅ Extension → `/ingest` working
+- ✅ Backend validates & persists to DuckDB
+- ✅ Graceful failure on unexpected page structure
 
-**Exit criterion met?** ⬜ No
+**Exit criterion met?** ✅ Yes
 **Notes:**
+- 2026-09-18: Implemented JSON-LD & heuristic fallback DOM parsers in content script. Built DuckDB schema and POST /ingest endpoint.
 
 ---
 
@@ -105,8 +106,8 @@ Update this file as work happens — one line per task, matching plan.md exactly
 ## Overall Status
 | Phase | Status | Exit criterion met |
 |---|---|---|
-| 0 — Foundations | ⬜ Not started | No |
-| 1 — Integrate | ⬜ Not started | No |
+| 0 — Foundations | 🟨 In progress | No |
+| 1 — Integrate | ✅ Done | Yes |
 | 2 — Identify | ⬜ Not started | No |
 | 3 — Explain | ⬜ Not started | No |
 | 4 — Execute | ⬜ Not started | No |

@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "StoreSathi Command Center",
+  "version": "1.0.0",
+  "description": "Universal Browser Extension for StoreSathi to read storefront data.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*",
+    "http://localhost/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_title": "StoreSathi"
+  }
+}
