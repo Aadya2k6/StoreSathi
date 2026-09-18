@@ -4,6 +4,7 @@ require('dotenv').config();
 const { initDB, con } = require('./db');
 const opportunitiesRouter = require('./routes/opportunities');
 const webhookRouter = require('./routes/webhook');
+const campaignsRouter = require('./routes/campaigns');
 const { runEngine } = require('./engine/opportunityEngine');
 
 const app = express();
@@ -26,6 +27,7 @@ app.get('/health', (req, res) => {
 // Mount routers
 app.use('/opportunities', opportunitiesRouter);
 app.use('/webhook', webhookRouter);
+app.use('/campaigns', campaignsRouter);
 
 app.get('/snapshots', (req, res) => {
   con.all('SELECT * FROM snapshots', (err, result) => {

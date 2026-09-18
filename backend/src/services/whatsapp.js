@@ -93,4 +93,54 @@ const sendOpportunityAlert = async (opportunity) => {
   }
 };
 
-module.exports = { sendOpportunityAlert };
+const sendCampaignBroadcast = async (campaign, copyText, recipientPhone) => {
+  if (!WHATSAPP_TOKEN || !PHONE_NUMBER_ID) {
+    throw new Error('Missing WhatsApp environment variables');
+  }
+
+  // Parse template variables for the specific recipient
+  // In a real broadcast, this loop would execute per customer.
+  // We send the live message to the recipientPhone parameter (merchant's test number)
+  const personalizedCopy = copyText.replace('{customer_name}', 'Paytm Customer');
+
+  const payload = {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to: recipientPhone,
+    type: "text",
+    text: {
+      preview_url: true,
+      body: personalizedCopy
+    }
+  };
+
+  try {
+    const response = await axios.post(
+      `https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`,
+      payload,
+      {
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const wamid = response.data.messages?.[0]?.id;
+    console.log(`WhatsApp: Sent campaign broadcast ${campaign.id} to ${recipientPhone} (wamid: ${wamid})`);
+
+    return { ok: true, wamid };
+  } catch (error) {
+    const errorData = error.response?.data?.error;
+    console.error('WhatsApp API Error (Broadcast):', errorData || error.message);
+    
+    // Explicitly handle Meta Sandbox Token expiration (Code 190 / Authentication Error)
+    if (errorData?.code === 190 || errorData?.message?.includes('Authentication Error')) {
+      throw new Error('Meta API Token Expired: Please generate a new WHATSAPP_TOKEN from the Meta App Dashboard and update backend/.env');
+    }
+    
+    throw new Error(errorData?.message || 'Failed to send campaign broadcast');
+  }
+};
+
+module.exports = { sendOpportunityAlert, sendCampaignBroadcast };

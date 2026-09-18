@@ -19,6 +19,16 @@ const Dock = () => {
           <span className="dock-label">Opportunities</span>
         </NavLink>
 
+        <NavLink to="/campaigns" className={({ isActive }) => `dock-item ${isActive ? 'active' : ''}`}>
+          <div className="dock-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 2a2 2 0 0 0-2 2v5H4a2 2 0 0 0-2 2v2c0 1.1.9 2 2 2h5v5c0 1.1.9 2 2 2h2a2 2 0 0 0 2-2v-5h5a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-5V4a2 2 0 0 0-2-2h-2z" transform="rotate(-45 12 12)"/>
+              <path d="M4.5 16.5l-2.5 5 5-2.5" />
+            </svg>
+          </div>
+          <span className="dock-label">Campaigns</span>
+        </NavLink>
+
         <NavLink to="/history" className={({ isActive }) => `dock-item ${isActive ? 'active' : ''}`}>
           <div className="dock-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>

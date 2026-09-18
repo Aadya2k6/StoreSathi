@@ -3,6 +3,7 @@ import Overview from './pages/Overview';
 import Opportunities from './pages/Opportunities';
 import History from './pages/History';
 import Settings from './pages/Settings';
+import Campaigns from './pages/Campaigns';
 import Dock from './components/Dock';
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Overview />} />
             <Route path="/opportunities" element={<Opportunities />} />
+            <Route path="/campaigns" element={<Campaigns />} />
             <Route path="/history" element={<History />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>

@@ -1,0 +1,294 @@
+.campaigns-container {
+  padding-bottom: 120px;
+}
+
+.campaigns-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.campaigns-header h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin: 0;
+  background: linear-gradient(135deg, var(--text-primary), var(--brand-primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.loyalty-metrics {
+  display: flex;
+  gap: 1rem;
+}
+
+.metric-badge {
+  background: var(--surface-glass);
+  border: 1px solid var(--border-glass);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.metric-badge svg {
+  color: var(--accent-pink);
+}
+
+.campaign-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.studio-card {
+  padding: 2rem;
+}
+
+.studio-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.preset-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.preset-btn {
+  background: var(--bg-base);
+  border: 1px solid var(--border-glass);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.preset-btn:hover {
+  background: var(--gradient-glow);
+  color: var(--brand-secondary);
+  border-color: var(--brand-primary);
+}
+
+.preset-btn.active {
+  background: var(--brand-primary);
+  color: white;
+  border-color: var(--brand-secondary);
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-glass);
+  background: rgba(255, 255, 255, 0.3);
+  font-size: 1rem;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.form-control:focus {
+  border-color: var(--brand-primary);
+}
+
+.generate-btn {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.generate-btn:hover {
+  opacity: 0.9;
+}
+
+.generate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Preview Section */
+.preview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: var(--bg-base);
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid var(--border-glass);
+}
+
+.visual-banner {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.visual-banner.theme-diwali {
+  background: linear-gradient(135deg, #FF9A9E, #FECFEF);
+  color: #8E2DE2;
+}
+
+.visual-banner.theme-weekend {
+  background: linear-gradient(135deg, #A8E6CF, #DCEDC1);
+  color: #2C3E50;
+}
+
+.visual-banner.theme-clearance {
+  background: linear-gradient(135deg, #FFD3B4, #FFAAA5);
+  color: #D32F2F;
+}
+
+.visual-banner.theme-loyalty {
+  background: linear-gradient(135deg, #E0C3FC, #8EC5FC);
+  color: #4A148C;
+}
+
+.visual-banner h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  z-index: 1;
+}
+
+.visual-banner .discount-badge {
+  background: rgba(255,255,255,0.9);
+  padding: 0.5rem 1.5rem;
+  border-radius: 30px;
+  font-weight: 800;
+  font-size: 1.25rem;
+  margin: 1rem 0;
+  z-index: 1;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.wa-preview {
+  background: #E5DDD5; /* WhatsApp background */
+  padding: 1.5rem;
+  border-radius: 12px;
+  position: relative;
+}
+
+.wa-bubble {
+  background: white;
+  padding: 1rem;
+  border-radius: 0 12px 12px 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  max-width: 90%;
+  white-space: pre-wrap;
+  font-size: 0.95rem;
+  color: #111B21;
+  line-height: 1.4;
+}
+
+.broadcast-actions {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-glass);
+}
+
+.broadcast-btn {
+  width: 100%;
+  padding: 1.25rem;
+  background: #25D366; /* WhatsApp Green */
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+}
+
+.broadcast-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+}
+
+.broadcast-btn:disabled {
+  background: #ccc;
+  transform: none;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.status-alert {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background: var(--bg-base);
+  border: 1px solid var(--border-glass);
+  text-align: center;
+  font-weight: 500;
+  color: var(--primary-deep);
+  animation: fadeIn 0.3s ease;
+}
+
+.history-section {
+  margin-top: 3rem;
+}
+
+.history-section h3 {
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
+}
+
+@media (max-width: 1024px) {
+  .campaign-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,121 +1,108 @@
 # StoreSathi — Progress Tracker
 
-Track 1 · Merchant Growth AI · Team pink_code
-
-Status legend: `⬜ Not started` · `🟨 In progress` · `✅ Done` · `⛔ Blocked`
-
-Update this file as work happens — one line per task, matching plan.md exactly, so plan and progress never drift apart. Add a dated note under a phase whenever its status changes.
+Update this file as you go (check boxes, fill owner/status). Pair with `PLAN.md`.
+Legend: ⬜ not started · 🟨 in progress · ✅ done · 🔺 blocked
 
 ---
 
-## Phase 0 — Foundations & Setup — 🟨 In progress
-- ✅ Repo structure agreed
-- ✅ Backend skeleton boots
-- ✅ Portal skeleton boots
-- ✅ Extension skeleton loads
-- ✅ DuckDB initialized
-- 🟨 WhatsApp Cloud API sandbox working
-- ✅ Secrets convention agreed
+## Block 1 — Foundation (Hours 0–6)
+| # | Task | Owner | Status | Notes |
+|---|---|---|---|---|
+| 1.1 | Freeze DB schema (merchant, store, user, product, inventory_movement, sale, sale_item, ocr_document, recommendation, action, daily_metric) | | ⬜ | |
+| 1.2 | Repository/data-access layer over DuckDB | | ⬜ | |
+| 1.3 | Auth (email/password) + merchant/store context middleware | | ⬜ | |
+| 1.4 | Seed script skeleton (empty tables, ready for demo data later) | | ⬜ | |
+| **CP1** | **Checkpoint: authenticated request reads/writes a scoped row** | | ⬜ | |
 
-**Exit criterion met?** ⬜ No
-**Notes:**
-- 2026-09-17: Repo structure, skeletons, DuckDB, and portal created. Waiting on user to configure Meta Developer Sandbox for WhatsApp credentials.
+## Block 2 — Billing + OCR (Hours 6–14)
+### Track A — Billing
+| # | Task | Owner | Status | Notes |
+|---|---|---|---|---|
+| 2.A1 | Product search / catalogue CRUD | | ⬜ | |
+| 2.A2 | Create-sale flow: validate → transaction → sale_items | | ⬜ | |
+| 2.A3 | Inventory movement on sale + stock decrement | | ⬜ | |
+| 2.A4 | Idempotency key enforced on sale creation | | ⬜ | |
+| 2.A5 | Receipt generation (basic) | | ⬜ | |
 
----
+### Track B — OCR
+| # | Task | Owner | Status | Notes |
+|---|---|---|---|---|
+| 2.B1 | Upload endpoint + file validation | | ⬜ | |
+| 2.B2 | Preprocessing (resize/grayscale/contrast) | | ⬜ | |
+| 2.B3 | Tesseract integration | | ⬜ | |
+| 2.B4 | Document parser → structured candidate JSON | | ⬜ | |
+| 2.B5 | Confidence scoring | | ⬜ | |
+| 2.B6 | Review UI (merchant confirms/edits before commit) | | ⬜ | |
+| 2.B7 | Commit confirmed OCR → catalogue/sale | | ⬜ | |
+| **CP2** | **Checkpoint: photographed bill → real catalogue rows; manual sale → stock decrements correctly** | | ⬜ | |
 
-## Phase 1 — Integrate (Data Capture) — ✅ Done
-- ✅ Normalized listing schema defined
-- ✅ DOM-reading logic (site type 1)
-- ✅ DOM-reading logic (site type 2)
-- ✅ Extension → `/ingest` working
-- ✅ Backend validates & persists to DuckDB
-- ✅ Graceful failure on unexpected page structure
+## Block 3 — Intelligence (Hours 14–20)
+### Track C — Rules & Forecasting
+| # | Task | Owner | Status | Notes |
+|---|---|---|---|---|
+| 3.C1 | Low stock rule | | ⬜ | |
+| 3.C2 | Stockout risk rule (days_remaining calc) | | ⬜ | |
+| 3.C3 | Slow-moving product rule | | ⬜ | |
+| 3.C4 | Sales anomaly detection | | ⬜ | |
+| 3.C5 | Growth opportunity rule | | ⬜ | |
+| 3.C6 | Forecasting: moving avg / day-of-week weighting | | ⬜ | |
 
-**Exit criterion met?** ✅ Yes
-**Notes:**
-- 2026-09-18: Implemented JSON-LD & heuristic fallback DOM parsers in content script. Built DuckDB schema and POST /ingest endpoint.
+### Track D — Frontend Shell
+| # | Task | Owner | Status | Notes |
+|---|---|---|---|---|
+| 3.D1 | Login / onboarding screens | | ⬜ | |
+| 3.D2 | Dashboard screen wired to real analytics APIs | | ⬜ | |
+| 3.D3 | Billing / New Sale screen | | ⬜ | |
+| 3.D4 | OCR upload + review screen | | ⬜ | |
+| 3.D5 | Inventory screen | | ⬜ | |
+| **CP3** | **Checkpoint: dashboard shows real low-stock/anomaly cards from seeded data, no LLM involved** | | ⬜ | |
 
----
+## Block 4 — AI Copilot + Recommendations (Hours 20–26)
+| # | Task | Owner | Status | Notes |
+|---|---|---|---|---|
+| 4.1 | AIProvider abstraction (OpenAIProvider impl) | | ⬜ | |
+| 4.2 | Bounded context builder (profile, catalogue, recent aggregates, anomalies) | | ⬜ | |
+| 4.3 | Copilot chat endpoint + UI | | ⬜ | |
+| 4.4 | Recommendation object generation (evidence from backend, not LLM) | | ⬜ | |
+| 4.5 | Guardrail post-processing (no fabricated metrics/guarantees) | | ⬜ | |
+| 4.6 | Fallback: LLM-down path shows deterministic facts only | | ⬜ | |
+| **CP4** | **Checkpoint: copilot answers a real question with real numbers; pulling the API key degrades gracefully** | | ⬜ | |
 
-## Phase 2 — Identify (Opportunity Engine) — ✅ Done
-- ✅ Underpriced item rule
-- ✅ Response gap rule
-- ✅ Slow-moving stock rule
-- ✅ Tier A vs Tier B decided per opportunity type (all Tier A for v1)
-- ✅ Opportunity state machine implemented
-- ✅ Unit tests written & passing
+## Block 5 — Actions + Demo Data (Hours 26–30)
+| # | Task | Owner | Status | Notes |
+|---|---|---|---|---|
+| 5.1 | Action state machine (detected→...→verified) | | ⬜ | |
+| 5.2 | Approve/Reject UI on recommendation cards | | ⬜ | |
+| 5.3 | Action history screen | | ⬜ | |
+| 5.4 | WhatsApp mock adapter (live only if credentials ready by hr 20) | | ⬜ | |
+| 5.5 | Demo data: Kirana merchant, full history | | ⬜ | |
+| 5.6 | Demo data: Restaurant merchant, full history | | ⬜ | |
+| 5.7 | Demo data: Salon merchant, full history | | ⬜ | |
+| **CP5** | **Checkpoint: full 12-step golden path runs twice, no manual fixes mid-run** | | ⬜ | |
 
-**Exit criterion met?** ✅ Yes
-**Notes:**
-- 2026-09-18: Built opportunity engine with 3 pluggable rules. State machine: detected→drafted→sent_for_approval→approved/rejected→executed→verified. Engine auto-runs after each ingest.
-
----
-
-## Phase 3 — Explain (Plain-Language Drafting) — ✅ Done
-- ✅ Drafting logic built (template-based for high reliability & speed)
-- ✅ Tone guidelines applied (jargon-free, actionable)
-- ✅ Drafts linked to source opportunity (stored in `details.draft`)
-- ✅ Extension Sidebar UI built to display drafts gracefully on the storefront
-
-**Exit criterion met?** ✅ Yes
-**Notes:**
-- 2026-09-18: Built Drafting Service that auto-runs after Opportunity Engine. Sidebar injected via Shadow/DOM directly on the storefront (no separate dashboard required for this view). Proxied fetch through background.js to bypass CORS.
-
----
-
-## Phase 4 — Execute (WhatsApp Action Loop) — ⬜ Not started
-- ⬜ Interactive message template built
-- ⬜ Outbound send pipeline
-- ⬜ Inbound webhook handling
-- ⬜ Idempotency handled
-- ⬜ Tier A guided-action flow
-- ⬜ Tier B auto-execute flow (where feasible)
-- ⬜ Failure paths communicated to merchant
-
-**Exit criterion met?** ⬜ No
-**Notes:**
-
----
-
-## Phase 5 — Command Center Portal (Frontend Polish) — ✅ Done
-- `[x]` Design tokens implemented (pastel/light theme updated to premium dark mode)
-- `[x]` Overview screen
-- `[x]` Opportunities feed
-- `[x]` Action history/log
-- `[x]` Settings screen
-- `[x]` Responsive check
-- `[x]` Accessibility/contrast pass
-
-**Exit criterion met?** ✅ Yes
-**Notes:** 
-- Successfully implemented a premium "Command Center" aesthetic with dark glassmorphism.
-- The user requested a macOS-style floating bottom dock navigation instead of a sidebar, which was implemented.
-
----
-
-## Phase 6 — Integration, QA & Demo Readiness — ⬜ Not started
-- ⬜ Full end-to-end run-through
-- ⬜ Error handling audit
-- ⬜ Clean demo dataset seeded
-- ⬜ Backup demo video recorded
-- ⬜ Pitch-vs-build alignment check
-- ⬜ Freemium/Premium boundary visible in UI
-- ⬜ Final README written
-
-**Exit criterion met?** ⬜ No
-**Notes:**
+## Block 6 — Rehearsal & Hardening (Hours 30–36)
+| # | Task | Owner | Status | Notes |
+|---|---|---|---|---|
+| 6.1 | Golden path run #1 — timed | | ⬜ | |
+| 6.2 | Golden path run #2–5 — timed, refine narration | | ⬜ | |
+| 6.3 | Kill-switch test: LLM down | | ⬜ | |
+| 6.4 | Kill-switch test: OCR down | | ⬜ | |
+| 6.5 | Kill-switch test: WhatsApp down | | ⬜ | |
+| 6.6 | Kill-switch test: Paytm/mock data path | | ⬜ | |
+| 6.7 | Hide/remove unfinished screens from nav | | ⬜ | |
+| 6.8 | Backup recording of golden path | | ⬜ | |
 
 ---
 
-## Overall Status
-| Phase | Status | Exit criterion met |
-|---|---|---|
-| 0 — Foundations | 🟨 In progress | No |
-| 1 — Integrate | ✅ Done | Yes |
-| 2 — Identify | ✅ Done | Yes |
-| 3 — Explain | ✅ Done | Yes |
-| 4 — Execute | ✅ Done | Yes |
-| 5 — Portal Polish | ✅ Done | Yes |
-| 6 — QA & Demo Readiness | ⬜ Not started | No |
+## Cut-list status (mark if cut)
+- [ ] Live WhatsApp (kept mock only)
+- [ ] Real Paytm integration (kept mock only)
+- [ ] Cloud Vision OCR fallback
+- [ ] Chrome extension live demo
+- [ ] Combo/offer recommendation type
+- [ ] Multi-store per merchant
 
-**How to use this file:** before a work session, mark tasks `🟨` when you begin them and `✅` only once actually verified working (not just written). If something is stuck, mark `⛔` and write why in that phase's Notes — don't leave a blocker silent.
+## Overall status
+- Current block: ______
+- Biggest risk right now: ______
+- Golden path last successful run: ______
