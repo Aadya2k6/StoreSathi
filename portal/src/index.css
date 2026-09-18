@@ -1,72 +1,151 @@
 :root {
-  --bg-base: #FAF7FB;
-  --surface-glass: rgba(255, 255, 255, 0.55);
-  --primary: #B39DDB;
-  --primary-deep: #8E7CC3;
-  --accent-mint: #A8E6CF;
-  --accent-peach: #FFD3B4;
-  --accent-pink: #FFB6C1;
-  --text-primary: #3A3550;
-  --text-muted: #7A748F;
-  --border-glass: rgba(255, 255, 255, 0.6);
+  /* Premium Light Palette */
+  --bg-color: #f8fafc; /* Slate 50 */
+  --surface-color: #ffffff; /* White */
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.9);
+  
+  /* Brand Gradients (Electric Violet & Blue) */
+  --brand-primary: #7c3aed; /* Violet 600 */
+  --brand-secondary: #2563eb; /* Blue 600 */
+  --gradient-brand: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+  --gradient-glow: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(37, 99, 235, 0.15));
+
+  /* Text Colors */
+  --text-primary: #0f172a; /* Slate 900 */
+  --text-secondary: #334155; /* Slate 700 */
+  --text-muted: #64748b; /* Slate 500 */
+
+  /* Status Colors */
+  --status-success: #059669; /* Emerald 600 */
+  --status-success-bg: rgba(16, 185, 129, 0.15);
+  --status-warning: #d97706; /* Amber 600 */
+  --status-warning-bg: rgba(245, 158, 11, 0.15);
+  --status-error: #dc2626; /* Red 600 */
+  --status-error-bg: rgba(239, 68, 68, 0.1);
+
+  /* Utilities */
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-sm: 8px;
+  --radius-pill: 9999px;
+  
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
   color: var(--text-primary);
-  background-color: var(--bg-base);
+  background-color: var(--bg-color);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
   min-height: 100vh;
+  background: 
+    radial-gradient(circle at 15% 50%, rgba(124, 58, 237, 0.05), transparent 30%),
+    radial-gradient(circle at 85% 30%, rgba(37, 99, 235, 0.05), transparent 30%),
+    var(--bg-color);
+  background-attachment: fixed;
+  overflow-x: hidden;
 }
 
-#root {
-  display: flex;
-  min-height: 100vh;
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
-.glass-card {
-  background: var(--surface-glass);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border-glass);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-  border-radius: 16px;
+a {
+  text-decoration: none;
+  color: inherit;
 }
 
-/* Base styles for app layout */
-.app-container {
-  display: flex;
-  width: 100%;
+/* Glassmorphism Panel */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05),
+              inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
 
-.sidebar {
-  width: 250px;
-  padding: 2rem;
-  border-right: 1px solid var(--border-glass);
+/* Text Gradient */
+.text-gradient {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
 }
 
-.sidebar nav {
+/* Base Layout for App */
+.app-layout {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-}
-
-.sidebar a {
-  text-decoration: none;
-  color: var(--text-muted);
-  font-weight: 500;
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
-  transition: all 0.2s ease;
-}
-
-.sidebar a:hover, .sidebar a.active {
-  background-color: var(--primary);
-  color: white;
+  min-height: 100vh;
+  padding-bottom: 120px; /* Space for bottom dock */
 }
 
 .main-content {
   flex: 1;
-  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 40px 24px;
+}
+
+/* Top Branding Bar */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 40px;
+  width: 100%;
+}
+.brand-logo {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.brand-logo svg {
+  color: var(--brand-primary);
+}
+
+/* Micro-animations & Buttons */
+.btn-primary {
+  background: var(--gradient-brand);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius-pill);
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.25);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.35);
+}
+
+/* Utility Animations */
+.animate-fade-in {
+  animation: fadeIn 0.4s ease forwards;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

@@ -77,17 +77,19 @@ Update this file as work happens — one line per task, matching plan.md exactly
 
 ---
 
-## Phase 5 — Command Center Portal (Frontend Polish) — ⬜ Not started
-- ⬜ Design tokens implemented (pastel/light theme)
-- ⬜ Overview screen
-- ⬜ Opportunities feed
-- ⬜ Action history/log
-- ⬜ Settings screen
-- ⬜ Responsive check
-- ⬜ Accessibility/contrast pass
+## Phase 5 — Command Center Portal (Frontend Polish) — ✅ Done
+- `[x]` Design tokens implemented (pastel/light theme updated to premium dark mode)
+- `[x]` Overview screen
+- `[x]` Opportunities feed
+- `[x]` Action history/log
+- `[x]` Settings screen
+- `[x]` Responsive check
+- `[x]` Accessibility/contrast pass
 
-**Exit criterion met?** ⬜ No
-**Notes:**
+**Exit criterion met?** ✅ Yes
+**Notes:** 
+- Successfully implemented a premium "Command Center" aesthetic with dark glassmorphism.
+- The user requested a macOS-style floating bottom dock navigation instead of a sidebar, which was implemented.
 
 ---
 
@@ -113,7 +115,7 @@ Update this file as work happens — one line per task, matching plan.md exactly
 | 2 — Identify | ✅ Done | Yes |
 | 3 — Explain | ✅ Done | Yes |
 | 4 — Execute | ✅ Done | Yes |
-| 5 — Portal Polish | ⬜ Not started | No |
+| 5 — Portal Polish | ✅ Done | Yes |
 | 6 — QA & Demo Readiness | ⬜ Not started | No |
 
 **How to use this file:** before a work session, mark tasks `🟨` when you begin them and `✅` only once actually verified working (not just written). If something is stuck, mark `⛔` and write why in that phase's Notes — don't leave a blocker silent.

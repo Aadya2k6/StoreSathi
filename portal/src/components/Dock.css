@@ -1,0 +1,107 @@
+.dock-container {
+  position: fixed;
+  bottom: 30px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  z-index: 100;
+  pointer-events: none; /* Let clicks pass through outside the dock */
+}
+
+.dock {
+  pointer-events: auto; /* Re-enable clicks on the dock */
+  display: flex;
+  gap: 16px;
+  padding: 12px 24px;
+  border-radius: 9999px; /* Pill shape */
+  align-items: center;
+  
+  /* Additional shadow for floating effect */
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 
+              0 0 0 1px var(--glass-border) inset;
+}
+
+.dock-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  color: var(--text-muted);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  text-decoration: none;
+}
+
+.dock-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dock-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.dock-label {
+  position: absolute;
+  top: -40px;
+  background: var(--surface-color);
+  color: var(--text-primary);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.2s ease;
+  pointer-events: none;
+  white-space: nowrap;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* Hover effects */
+.dock-item:hover {
+  color: var(--text-primary);
+}
+
+.dock-item:hover .dock-icon {
+  transform: translateY(-8px) scale(1.15);
+  color: var(--brand-primary);
+  filter: drop-shadow(0 4px 8px rgba(124, 58, 237, 0.2));
+}
+
+.dock-item:hover .dock-label {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Active state */
+.dock-item.active {
+  color: var(--brand-primary);
+}
+
+.dock-item.active .dock-icon {
+  filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.2));
+}
+
+/* Optional: Active indicator dot below */
+.dock-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--brand-primary);
+  box-shadow: 0 0 8px var(--brand-primary);
+}
