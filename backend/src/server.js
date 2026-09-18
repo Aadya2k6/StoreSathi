@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const { initDB, con } = require('./db');
+const opportunitiesRouter = require('./routes/opportunities');
+const { runEngine } = require('./engine/opportunityEngine');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -19,6 +21,9 @@ initDB().then(() => {
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Mount routers
+app.use('/opportunities', opportunitiesRouter);
 
 app.get('/snapshots', (req, res) => {
   con.all('SELECT * FROM snapshots', (err, result) => {
@@ -59,6 +64,12 @@ app.post('/ingest', (req, res) => {
         return res.status(500).json({ error: 'Database insertion failed' });
       }
       res.status(201).json({ status: 'ok', message: 'Snapshot ingested successfully' });
+      // Auto-run the opportunity engine after each successful ingest
+      runEngine().then(result => {
+        console.log(`Opportunity engine: ${result.opportunities_created} new opportunity/ies detected.`);
+      }).catch(err => {
+        console.error('Opportunity engine error after ingest:', err.message);
+      });
     }
   );
   stmt.finalize();

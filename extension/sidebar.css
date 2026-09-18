@@ -1,0 +1,123 @@
+/* Glassmorphism Sidebar Styles */
+#storesathi-sidebar-root {
+  position: fixed;
+  top: 20px;
+  right: -400px; /* Hidden initially */
+  width: 350px;
+  height: auto;
+  max-height: calc(100vh - 40px);
+  z-index: 2147483647; /* Maximum possible z-index */
+  background: rgba(250, 247, 251, 0.85); /* --bg-base with opacity */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6); /* --border-glass */
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #3A3550; /* --text-primary */
+  transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+#storesathi-sidebar-root.visible {
+  right: 20px;
+}
+
+#storesathi-sidebar-root .ss-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+#storesathi-sidebar-root .ss-logo {
+  font-weight: 700;
+  font-size: 16px;
+  color: #8E7CC3; /* --primary-deep */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#storesathi-sidebar-root .ss-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #7A748F; /* --text-muted */
+  padding: 4px;
+}
+
+#storesathi-sidebar-root .ss-opportunity-card {
+  background: rgba(255, 255, 255, 0.55); /* --surface-glass */
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+#storesathi-sidebar-root .ss-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+#storesathi-sidebar-root .ss-tag.underpriced  { background: #A8E6CF; color: #1f5742; } /* --accent-mint */
+#storesathi-sidebar-root .ss-tag.response_gap { background: #FFB6C1; color: #5e2630; } /* --accent-pink */
+#storesathi-sidebar-root .ss-tag.slow_moving  { background: #FFD3B4; color: #6b4122; } /* --accent-peach */
+#storesathi-sidebar-root .ss-tag.price_watch  { background: #D8C4F0; color: #4a3070; } /* soft lavender */
+
+#storesathi-sidebar-root .ss-headline {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
+#storesathi-sidebar-root .ss-reason {
+  font-size: 13px;
+  color: #7A748F; /* --text-muted */
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+#storesathi-sidebar-root .ss-action {
+  font-size: 14px;
+  font-weight: 500;
+  color: #3A3550;
+  background: rgba(179, 157, 219, 0.15); /* --primary with low opacity */
+  padding: 10px;
+  border-radius: 8px;
+  border-left: 4px solid #B39DDB; /* --primary */
+  margin: 0 0 16px 0;
+}
+
+#storesathi-sidebar-root .ss-button {
+  width: 100%;
+  background: #B39DDB; /* --primary */
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+#storesathi-sidebar-root .ss-button:hover {
+  background: #8E7CC3; /* --primary-deep */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(179, 157, 219, 0.4);
+}

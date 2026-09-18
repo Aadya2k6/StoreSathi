@@ -176,28 +176,42 @@ const isProductPage = () => {
 // ─── Send to backend via background service worker ──────────────────────────
 // Direct fetch from content script is blocked by Chrome's Private Network Access
 // policy when the page origin is HTTPS. Route through background.js instead.
+// The SW can occasionally be dormant — we retry up to 3 times before giving up.
+const sendMessageWithRetry = (message, retries, callback) => {
+  chrome.runtime.sendMessage(message, (response) => {
+    if (chrome.runtime.lastError) {
+      if (retries > 0) {
+        console.warn(`StoreSathi: SW dormant, retrying in 1s... (${retries} left)`);
+        setTimeout(() => sendMessageWithRetry(message, retries - 1, callback), 1000);
+      } else {
+        callback(null, chrome.runtime.lastError.message);
+      }
+      return;
+    }
+    callback(response, null);
+  });
+};
 const sendToBackend = (payload) => {
   if (hasSentData) return;
   hasSentData = true;
 
-  chrome.runtime.sendMessage(
-    { action: 'ingest', data: payload },
-    (response) => {
-      if (chrome.runtime.lastError) {
-        console.error('StoreSathi: ❌ Background worker error:', chrome.runtime.lastError.message);
-        hasSentData = false; // Allow retry
-        return;
-      }
-      if (response && response.ok) {
-        console.log(
-          `StoreSathi: ✅ Ingested: "${payload.product_name}" | ${payload.currency} ${payload.price} | ${payload.stock_status}`
-        );
-      } else {
-        hasSentData = false; // Allow retry on server error
-        console.error('StoreSathi: ❌ Ingest failed:', response ? response.error : 'no response');
-      }
+  sendMessageWithRetry({ action: 'ingest', data: payload }, 3, (response, err) => {
+    if (err) {
+      console.error('StoreSathi: ❌ Background worker error:', err);
+      hasSentData = false; // Allow retry
+      return;
     }
-  );
+    if (response && response.ok) {
+      console.log(
+        `StoreSathi: ✅ Ingested: "${payload.product_name}" | ${payload.currency} ${payload.price} | ${payload.stock_status}`
+      );
+      // After ingestion, poll for opportunities — the engine runs async so retry a few times
+      pollForOpportunity(5, 2000);
+    } else {
+      hasSentData = false; // Allow retry on server error
+      console.error('StoreSathi: ❌ Ingest failed:', response ? response.error : 'no response');
+    }
+  });
 };
 
 // ─── Main run function ────────────────────────────────────────────────────────
@@ -276,6 +290,121 @@ setInterval(() => {
 pendingTimers.push(setTimeout(() => run('2s'), 2000));
 // Second attempt at 5s — covers slow-hydrating Next.js pages
 pendingTimers.push(setTimeout(() => run('5s'), 5000));
+
+// ─── Sidebar UI (Phase 3) ─────────────────────────────────────────────────────
+let sidebarInjected = false;
+
+const closeSidebar = () => {
+  const sidebar = document.getElementById('storesathi-sidebar-root');
+  if (sidebar) {
+    sidebar.classList.remove('visible');
+    setTimeout(() => sidebar.remove(), 400); // Wait for transition
+    sidebarInjected = false;
+  }
+};
+
+const renderSidebar = (opp) => {
+  if (sidebarInjected) return;
+
+  // We only care about opportunities that have been drafted
+  const draft = opp.details?.draft;
+  if (!draft || !draft.headline) {
+    console.warn('StoreSathi: Opportunity has no draft yet, skipping sidebar render.');
+    return; // Do NOT set sidebarInjected — allow future retries
+  }
+
+  sidebarInjected = true; // Lock only after we know we can render
+
+  const typeLabels = {
+    underpriced: '📈 Underpriced',
+    response_gap: '💬 Response Gap',
+    slow_moving: '📦 Slow Moving',
+    price_watch: '👁️ Price Watch'
+  };
+
+  const el = document.createElement('div');
+  el.id = 'storesathi-sidebar-root';
+  el.innerHTML = `
+    <div class="ss-header">
+      <div class="ss-logo">✨ StoreSathi</div>
+      <button class="ss-close" id="ss-close-btn">&times;</button>
+    </div>
+    <div class="ss-opportunity-card">
+      <div class="ss-tag ${opp.type}">${typeLabels[opp.type] || opp.type}</div>
+      <h3 class="ss-headline">${draft.headline}</h3>
+      <p class="ss-reason">${draft.reason}</p>
+      <div class="ss-action">${draft.action}</div>
+      <button class="ss-button" id="ss-approve-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        Approve via WhatsApp
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(el);
+
+  // Force reflow before adding visible class for CSS transition
+  void el.offsetWidth;
+  el.classList.add('visible');
+
+  document.getElementById('ss-close-btn').addEventListener('click', closeSidebar);
+  
+  document.getElementById('ss-approve-btn').addEventListener('click', () => {
+    alert("Phase 4: WhatsApp Integration goes here!");
+    closeSidebar();
+  });
+};
+
+const checkAndDisplayOpportunity = () => {
+  const currentUrl = encodeURIComponent(window.location.href);
+  console.log('StoreSathi: 🔍 Checking for opportunities for URL:', window.location.href);
+  chrome.runtime.sendMessage(
+    { action: 'fetch_opportunities', url: currentUrl },
+    (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('StoreSathi: ❌ Fetch opportunity error:', chrome.runtime.lastError.message);
+        return;
+      }
+      console.log('StoreSathi: 📊 Opportunity response:', response);
+      if (response && response.ok && response.data && response.data.count > 0) {
+        // Find the first drafted opportunity for this URL
+        const opp = response.data.data.find(o => o.status === 'drafted' || o.status === 'detected');
+        if (opp) {
+          console.log('StoreSathi: 🎯 Opportunity found, rendering sidebar:', opp.type);
+          renderSidebar(opp);
+        }
+      } else {
+        console.log('StoreSathi: ℹ️ No opportunities found for this URL.');
+      }
+    }
+  );
+};
+
+// Polls for opportunities with retries — needed because the engine runs async
+const pollForOpportunity = (retriesLeft, intervalMs) => {
+  if (retriesLeft <= 0 || sidebarInjected) return;
+  console.log(`StoreSathi: ⏳ Polling for opportunity (${retriesLeft} retries left)...`);
+  sendMessageWithRetry(
+    { action: 'fetch_opportunities', url: encodeURIComponent(window.location.href) },
+    2,
+    (response, err) => {
+      if (err) return;
+      if (response && response.ok && response.data && response.data.count > 0) {
+        const opp = response.data.data.find(o => o.status === 'drafted' || o.status === 'detected');
+        if (opp) {
+          console.log('StoreSathi: 🎯 Opportunity found on poll, rendering sidebar:', opp.type);
+          renderSidebar(opp);
+          return;
+        }
+      }
+      // Not found yet — try again
+      setTimeout(() => pollForOpportunity(retriesLeft - 1, intervalMs), intervalMs);
+    }
+  );
+};
+
+// Also check for opportunities independently on page load (in case already seeded)
+pendingTimers.push(setTimeout(checkAndDisplayOpportunity, 4000));
 
 // ─── Handle popup/background messages ────────────────────────────────────────
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

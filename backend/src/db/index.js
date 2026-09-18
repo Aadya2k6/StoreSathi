@@ -8,8 +8,9 @@ const con = db.connect();
 
 const initDB = () => {
   return new Promise((resolve, reject) => {
-    const createTableQuery = `
-      CREATE TABLE IF NOT EXISTS snapshots (
+    const queries = [
+      // Stores raw scraped product data from the extension
+      `CREATE TABLE IF NOT EXISTS snapshots (
         url VARCHAR,
         product_name VARCHAR,
         price DOUBLE,
@@ -19,14 +20,29 @@ const initDB = () => {
         rating DOUBLE,
         platform VARCHAR,
         timestamp VARCHAR
-      );
-    `;
-    con.run(createTableQuery, (err) => {
-      if (err) {
-        return reject(err);
-      }
-      resolve();
-    });
+      )`,
+      // Stores detected opportunities and their state machine progression
+      `CREATE TABLE IF NOT EXISTS opportunities (
+        id VARCHAR PRIMARY KEY,
+        type VARCHAR,
+        product_name VARCHAR,
+        url VARCHAR,
+        status VARCHAR,
+        tier VARCHAR,
+        detected_at VARCHAR,
+        details VARCHAR
+      )`
+    ];
+
+    const runNext = (index) => {
+      if (index >= queries.length) return resolve();
+      con.run(queries[index], (err) => {
+        if (err) return reject(err);
+        runNext(index + 1);
+      });
+    };
+
+    runNext(0);
   });
 };
 
