@@ -79,4 +79,33 @@ router.patch('/:id/status', (req, res) => {
   stmt.finalize();
 });
 
+// ─── POST /opportunities/:id/send (Trigger WhatsApp Alert) ─────────────────
+router.post('/:id/send', async (req, res) => {
+  const { id } = req.params;
+  
+  // 1. Fetch opportunity
+  const opp = await new Promise((resolve, reject) => {
+    const stmt = con.prepare('SELECT * FROM opportunities WHERE id = ?');
+    stmt.all(id, (err, rows) => {
+      if (err) reject(err);
+      else resolve(rows[0]);
+    });
+    stmt.finalize();
+  });
+
+  if (!opp) {
+    return res.status(404).json({ error: 'Opportunity not found' });
+  }
+
+  // 2. Call the WhatsApp Service
+  const { sendOpportunityAlert } = require('../services/whatsapp');
+  
+  try {
+    const result = await sendOpportunityAlert(opp);
+    res.json({ ok: true, wamid: result.wamid });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

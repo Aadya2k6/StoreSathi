@@ -72,6 +72,13 @@ const extractJSONLD = () => {
           rating = parseFloat(product.aggregateRating.ratingValue || 0);
         }
 
+        // If JSON-LD has no review data, enrich from DOM
+        if (reviews_count === 0) {
+          const domReviews = extractReviewData();
+          if (domReviews.reviews_count > 0) reviews_count = domReviews.reviews_count;
+          if (domReviews.rating > 0) rating = domReviews.rating;
+        }
+
         return {
           url: window.location.href,
           product_name: product.name,
@@ -89,6 +96,125 @@ const extractJSONLD = () => {
     }
   }
   return null;
+};
+
+// ─── Strategy C: Universal Review Count Extractor ────────────────────────────
+// Works across Shopify, WooCommerce, Gymshark, Amazon, Myntra, Flipkart, etc.
+const extractReviewData = () => {
+  let reviews_count = 0;
+  let rating = 0;
+
+  // 1. Try JSON-LD aggregateRating first (most reliable when available)
+  const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+  for (const script of scripts) {
+    try {
+      const data = JSON.parse(script.textContent || '{}');
+      const items = Array.isArray(data) ? data : [data];
+      for (const item of items) {
+        const candidates = [item, ...(item['@graph'] || [])];
+        for (const c of candidates) {
+          if (c.aggregateRating) {
+            reviews_count = parseInt(c.aggregateRating.reviewCount || c.aggregateRating.ratingCount || 0, 10);
+            rating = parseFloat(c.aggregateRating.ratingValue || 0);
+            if (reviews_count > 0) return { reviews_count, rating };
+          }
+        }
+      }
+    } catch(e) {}
+  }
+
+  // Arrays to hold all found values so we can pick the highest (main product)
+  const allReviewCounts = [];
+  const allRatings = [];
+
+  // 2. Universal DOM selectors
+  const reviewSelectors = [
+    '[itemprop="reviewCount"]', '[itemprop="ratingCount"]',
+    '[data-review-count]', '[data-reviews-count]',
+    '.review-count', '.reviews-count', '.review__count',
+    '.woocommerce-review-link .count', '.woocommerce-Reviews-title',
+    '#acrCustomerReviewText', '[class*="ReviewCount"]',
+    '[class*="reviewCount"]', '[class*="review-count"]',
+    '[class*="review_count"]', '[class*="reviews-total"]',
+    '[aria-label*="review"]', '[aria-label*="rating"]',
+    'span[class*="review"]', 'p[class*="review"]',
+    'a[class*="review"]', 'div[class*="review-count"]',
+  ];
+
+  for (const sel of reviewSelectors) {
+    const els = document.querySelectorAll(sel);
+    for (const el of els) {
+      const dataVal = el.getAttribute('data-review-count') || el.getAttribute('data-reviews-count');
+      if (dataVal) {
+        const parsed = parseInt(dataVal, 10);
+        if (!isNaN(parsed) && parsed > 0) allReviewCounts.push(parsed);
+      }
+      const text = el.textContent || el.innerText || '';
+      const match = text.match(/[\d,]+/);
+      if (match) {
+        const parsed = parseInt(match[0].replace(/,/g, ''), 10);
+        if (!isNaN(parsed) && parsed > 0) allReviewCounts.push(parsed);
+      }
+    }
+  }
+
+  // 3. Rating selectors
+  const ratingSelectors = [
+    '[itemprop="ratingValue"]', '[data-rating]', '.rating-value',
+    '.star-rating [class*="value"]', '[class*="RatingValue"]',
+    '[class*="ratingValue"]', '[aria-label*="out of"]',
+  ];
+  for (const sel of ratingSelectors) {
+    const els = document.querySelectorAll(sel);
+    for (const el of els) {
+      const val = el.getAttribute('content') || el.getAttribute('data-rating') ||
+                  el.getAttribute('aria-label') || el.textContent || '';
+      const match = val.match(/[\d.]+/);
+      if (match) {
+        const parsed = parseFloat(match[0]);
+        if (parsed > 0 && parsed <= 5) allRatings.push(parsed);
+      }
+    }
+  }
+
+  // 4. Ultimate Fallback: Brute-force Regex over visible text (Works on ANY website)
+  const regexes = [
+    /([\d,]+)\s*(?:reviews|ratings|customer reviews)/i,
+    /\(([\d,]+)\)/  // e.g. (31) next to stars
+  ];
+  
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+  let node;
+  let textNodesChecked = 0;
+  while ((node = walker.nextNode()) && textNodesChecked < 2000) {
+    textNodesChecked++;
+    const text = node.nodeValue.trim();
+    if (!text || text.length > 50) continue;
+
+    for (const regex of regexes) {
+      const match = text.match(regex);
+      if (match) {
+        const parsed = parseInt(match[1].replace(/,/g, ''), 10);
+        if (!isNaN(parsed) && parsed > 0) allReviewCounts.push(parsed);
+      }
+    }
+  }
+
+  // Assume the highest numbers found on the page correspond to the main product being viewed,
+  // since related products or single reviews will have smaller numbers.
+  if (allReviewCounts.length > 0) {
+    reviews_count = Math.max(...allReviewCounts);
+  }
+  
+  if (allRatings.length > 0) {
+    // Usually ratings are out of 5, pick the max valid rating
+    const validRatings = allRatings.filter(r => r <= 5);
+    if (validRatings.length > 0) {
+      rating = Math.max(...validRatings);
+    }
+  }
+
+  return { reviews_count, rating };
 };
 
 // ─── Strategy B: OpenGraph + Heuristic Fallback ───────────────────────────────
@@ -135,14 +261,16 @@ const extractHeuristic = () => {
     }
   }
 
+  const { reviews_count, rating } = extractReviewData();
+
   return {
     url: window.location.href,
     product_name: title,
     price,
     currency,
     stock_status: 'unknown',
-    reviews_count: 0,
-    rating: 0,
+    reviews_count,
+    rating,
     platform: 'heuristic',
     timestamp: new Date().toISOString()
   };
@@ -206,7 +334,7 @@ const sendToBackend = (payload) => {
         `StoreSathi: ✅ Ingested: "${payload.product_name}" | ${payload.currency} ${payload.price} | ${payload.stock_status}`
       );
       // After ingestion, poll for opportunities — the engine runs async so retry a few times
-      pollForOpportunity(5, 2000);
+      pollForOpportunity(8, 3000); // 8 retries × 3s = 24s window for engine+drafting
     } else {
       hasSentData = false; // Allow retry on server error
       console.error('StoreSathi: ❌ Ingest failed:', response ? response.error : 'no response');
@@ -251,6 +379,12 @@ const onSpaNavigate = () => {
   if (currentUrl === lastUrl) return; // Same URL, ignore
   lastUrl = currentUrl;
   hasSentData = false; // Reset for new page
+  sidebarInjected = false; // Allow new sidebar to render
+  
+  // Hard remove old sidebar from DOM if it exists
+  const oldSidebar = document.getElementById('storesathi-sidebar-root');
+  if (oldSidebar) oldSidebar.remove();
+
   clearPendingTimers(); // Clear any pending timers from previous page
 
   console.log('StoreSathi: 🔄 SPA navigation detected →', currentUrl);
@@ -335,7 +469,7 @@ const renderSidebar = (opp) => {
       <p class="ss-reason">${draft.reason}</p>
       <div class="ss-action">${draft.action}</div>
       <button class="ss-button" id="ss-approve-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
         Approve via WhatsApp
       </button>
     </div>
@@ -349,9 +483,26 @@ const renderSidebar = (opp) => {
 
   document.getElementById('ss-close-btn').addEventListener('click', closeSidebar);
   
-  document.getElementById('ss-approve-btn').addEventListener('click', () => {
-    alert("Phase 4: WhatsApp Integration goes here!");
-    closeSidebar();
+  document.getElementById('ss-approve-btn').addEventListener('click', (e) => {
+    const btn = e.currentTarget;
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = 'Sending...';
+    btn.disabled = true;
+
+    sendMessageWithRetry({ action: 'send_opportunity', id: opp.id }, 2, (response, err) => {
+      if (err || !response.ok) {
+        alert("Failed to send to WhatsApp: " + (err || response.error));
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
+        return;
+      }
+      btn.innerHTML = '✅ Sent to WhatsApp!';
+      btn.style.background = '#4CAF50';
+      btn.style.color = 'white';
+      
+      // Close sidebar after success
+      setTimeout(closeSidebar, 2000);
+    });
   });
 };
 
@@ -367,11 +518,17 @@ const checkAndDisplayOpportunity = () => {
       }
       console.log('StoreSathi: 📊 Opportunity response:', response);
       if (response && response.ok && response.data && response.data.count > 0) {
-        // Find the first drafted opportunity for this URL
-        const opp = response.data.data.find(o => o.status === 'drafted' || o.status === 'detected');
+        // Only render if draft is fully ready
+        const opp = response.data.data.find(o => {
+          if (o.status !== 'drafted' && o.status !== 'sent_for_approval' && o.status !== 'approved') return false;
+          return o.details && o.details.draft && o.details.draft.headline;
+        });
         if (opp) {
           console.log('StoreSathi: 🎯 Opportunity found, rendering sidebar:', opp.type);
           renderSidebar(opp);
+        } else {
+          console.log('StoreSathi: ⏳ Opportunity exists but draft not ready yet, polling...');
+          pollForOpportunity(8, 3000);
         }
       } else {
         console.log('StoreSathi: ℹ️ No opportunities found for this URL.');
@@ -390,7 +547,11 @@ const pollForOpportunity = (retriesLeft, intervalMs) => {
     (response, err) => {
       if (err) return;
       if (response && response.ok && response.data && response.data.count > 0) {
-        const opp = response.data.data.find(o => o.status === 'drafted' || o.status === 'detected');
+        // Only render if the opportunity has a completed draft — engine may not have drafted yet
+        const opp = response.data.data.find(o => {
+          if (o.status !== 'drafted' && o.status !== 'sent_for_approval' && o.status !== 'approved') return false;
+          return o.details && o.details.draft && o.details.draft.headline;
+        });
         if (opp) {
           console.log('StoreSathi: 🎯 Opportunity found on poll, rendering sidebar:', opp.type);
           renderSidebar(opp);

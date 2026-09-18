@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 const { initDB, con } = require('./db');
 const opportunitiesRouter = require('./routes/opportunities');
+const webhookRouter = require('./routes/webhook');
 const { runEngine } = require('./engine/opportunityEngine');
 
 const app = express();
@@ -24,6 +25,7 @@ app.get('/health', (req, res) => {
 
 // Mount routers
 app.use('/opportunities', opportunitiesRouter);
+app.use('/webhook', webhookRouter);
 
 app.get('/snapshots', (req, res) => {
   con.all('SELECT * FROM snapshots', (err, result) => {

@@ -57,4 +57,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     return true;
   }
+  if (request.action === 'send_opportunity' && request.id) {
+    fetch(`http://localhost:3000/opportunities/${request.id}/send`, {
+      method: 'POST'
+    })
+      .then(res => {
+        if (res.ok) {
+          return res.json().then(json => sendResponse({ ok: true, data: json }));
+        } else {
+          return res.json().catch(() => ({})).then(err => {
+            sendResponse({ ok: false, error: err.error || `HTTP ${res.status}` });
+          });
+        }
+      })
+      .catch(err => {
+        sendResponse({ ok: false, error: err.message });
+      });
+
+    return true;
+  }
 });
