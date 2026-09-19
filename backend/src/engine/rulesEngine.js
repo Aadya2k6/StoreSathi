@@ -87,7 +87,7 @@ class RulesEngine {
   clearOldRecommendations(storeId) {
     const sId = storeId || this.defaultStoreId;
     return new Promise((resolve, reject) => {
-      con.run("DELETE FROM recommendations WHERE store_id = ? AND status = 'active'", sId, (err) => {
+      con.run("DELETE FROM recommendations WHERE store_id = ? AND status = 'active' AND evidence_data NOT LIKE '%trend_feed%'", sId, (err) => {
         if (err) return reject(err);
         resolve();
       });

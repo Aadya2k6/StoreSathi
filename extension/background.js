@@ -53,6 +53,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Keep channel open
   }
 
+  if (request.action === 'fetch_trends' && request.data) {
+    const storeId = request.storeId || 'store_1';
+    fetch(`http://localhost:3000/api/intelligence/trends?store_id=${storeId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request.data)
+    })
+      .then(res => {
+        if (res.ok) {
+          return res.json().then(json => sendResponse({ ok: true, data: json }));
+        } else {
+          sendResponse({ ok: false, error: `HTTP ${res.status}` });
+        }
+      })
+      .catch(err => sendResponse({ ok: false, error: err.message }));
+
+    return true;
+  }
+
   if (request.action === 'ingest_catalog' && request.products) {
     const storeId = request.storeId || 'store_1';
     fetch(`http://localhost:3000/api/catalogue/bulk-sync`, {

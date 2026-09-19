@@ -115,13 +115,54 @@ function injectSidebar() {
   }
 }
 
+// The merchant's own storefront gets the full inventory engine. Every other website only gets
+// market trends. For the demo the storefront is identified by the demo page; add more pages here.
+const STORE_PAGES = ['demo.html'];
+function isMerchantStore() {
+  const path = window.location.pathname.toLowerCase();
+  return STORE_PAGES.some(p => path.endsWith(p));
+}
+
+function refreshPanel() {
+  const greeting = document.querySelector('.ss-greeting p');
+  if (isMerchantStore()) {
+    if (greeting) greeting.innerText = 'Here are your smart alerts for today.';
+    checkAndRenderCatalogIngestion();
+    fetchRecommendations();
+  } else {
+    // Not the merchant's store: no catalogue sync, no inventory alerts — trends only
+    const ingest = document.getElementById('ss-ingest-container');
+    if (ingest) ingest.style.display = 'none';
+    if (greeting) greeting.innerText = 'Market trends spotted on this page.';
+    fetchTrends();
+  }
+  fetchChatHistory();
+}
+
+function fetchTrends() {
+  const listEl = document.getElementById('ss-recommendations-list');
+  listEl.innerHTML = '<div class="ss-loading">Scanning this page for market trends...</div>';
+  const storeId = localStorage.getItem('storeSathi_storeId') || 'store_1';
+
+  chrome.runtime.sendMessage({ action: 'fetch_trends', data: scrapeProductInfo(), storeId }, (response) => {
+    if (chrome.runtime.lastError || !response || !response.ok) {
+      listEl.innerHTML = '<div class="ss-error">Could not reach the StoreSathi backend.<br><small>Make sure it is running on port 3000.</small></div>';
+      return;
+    }
+    recommendations = (response.data && response.data.data) || [];
+    if (recommendations.length === 0) {
+      listEl.innerHTML = '<div class="ss-empty">No new trends spotted on this page.</div>';
+      return;
+    }
+    renderRecommendations();
+  });
+}
+
 function showMainView() {
   document.getElementById('ss-login-view').style.display = 'none';
   document.getElementById('ss-main-view').style.display = 'block';
   updateStoreNameUI();
-  checkAndRenderCatalogIngestion();
-  fetchRecommendations();
-  fetchChatHistory();
+  refreshPanel();
 }
 
 // Scrapes entire product catalog from page (tables, grids, cards)
@@ -276,9 +317,7 @@ function toggleSidebar() {
   if (isSidebarOpen) {
     sidebar.classList.add('open');
     if (localStorage.getItem('storeSathi_token')) {
-      checkAndRenderCatalogIngestion();
-      fetchRecommendations();
-      fetchChatHistory();
+      refreshPanel();
     }
   } else {
     sidebar.classList.remove('open');
@@ -526,6 +565,11 @@ function refreshLowStockKpi() {
 // Mirrors on the live storefront exactly what the backend just applied to the product.
 // `applied` comes from the approve endpoint: { kind, product_name, old/new price or stock, ... }
 function applyActionToPage(rec, applied) {
+  if (!isMerchantStore()) {
+    // We're on someone else's website — never modify its page
+    showLiveToast(`✅ Trend action approved: ${applied ? applied.summary : rec.title}`);
+    return;
+  }
   if (!applied) {
     // Recommendation without a structured action (e.g. AI-written) — nothing concrete to change
     showLiveBanner(`🔥 StoreSathi AI Action Active: ${rec.title}`);

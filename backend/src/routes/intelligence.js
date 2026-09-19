@@ -5,6 +5,7 @@ const { con } = require('../db');
 const { saveSnapshot } = require('../services/snapshotService');
 const { runEngine } = require('../engine/opportunityEngine');
 const { notifyUrgentAlerts } = require('../services/urgentAlertService');
+const { findTrendsForPage } = require('../services/trendService');
 
 // GET /api/intelligence/run
 // Manually triggers the rules engine (perfect for live demos)
@@ -16,6 +17,20 @@ router.get('/run', async (req, res) => {
   } catch (error) {
     console.error('Rules Engine Error:', error);
     res.status(500).json({ error: 'Failed to run rules engine', details: error.message });
+  }
+});
+
+// POST /api/intelligence/trends
+// For websites that are NOT the merchant's own store: returns only the market trends relevant to the
+// page being browsed (no inventory alerts, no snapshots).
+router.post('/trends', async (req, res) => {
+  try {
+    const storeId = req.query.store_id || req.body?.store_id || req.store_id || 'store_1';
+    const data = await findTrendsForPage(storeId, req.body || {});
+    res.json({ status: 'ok', count: data.length, data });
+  } catch (error) {
+    console.error('Trends Error:', error);
+    res.status(500).json({ error: 'Failed to find trends', details: error.message });
   }
 });
 
@@ -331,7 +346,7 @@ router.post('/recommendations/:id/approve', async (req, res) => {
     if (isCampaignAction) {
       try {
         const { saveCampaign } = require('../services/campaignService');
-        const prodName = rec.title.replace(/^(Growth Opportunity:\s*|Demand Spike:\s*)/i, '');
+        const prodName = rec.title.replace(/^(Growth Opportunity:\s*|Demand Spike:\s*|Trending Now:\s*)/i, '').replace(/\s*\(\+\d+%\)$/, '');
         const campaignObj = {
           id: uuidv4(),
           title: `WhatsApp Campaign: ${prodName}`,
