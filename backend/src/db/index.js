@@ -1,8 +1,12 @@
 const duckdb = require('duckdb');
 const path = require('path');
+const fs = require('fs');
 
 // Store DB in the data directory
-const dbPath = path.resolve(__dirname, '../../../data/store.db');
+const dbPath = process.env.DB_PATH
+  ? path.resolve(process.env.DB_PATH)
+  : path.resolve(__dirname, '../../../data/store.db');
+fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 const db = new duckdb.Database(dbPath);
 const con = db.connect();
 

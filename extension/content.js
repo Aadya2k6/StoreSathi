@@ -32,7 +32,7 @@ function loadLogin(done) {
 }
 
 // Auto-sync portal store login if on localhost:5173 (the portal is the source of truth for who is logged in)
-if (window.location.origin.includes('localhost:5173')) {
+if (window.location.origin.includes('localhost:5173') || document.querySelector('meta[name="storesathi-portal"]')) {
   const portalStoreId = localStorage.getItem('portal_storeId');
   const portalStoreName = localStorage.getItem('portal_storeName');
   if (portalStoreId) {

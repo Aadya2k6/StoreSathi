@@ -3,7 +3,8 @@ const nodemailer = require('nodemailer');
 // Ensure you configure these in .env (e.g. your free Gmail app password)
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
-const EMAIL_TO = process.env.EMAIL_TO || EMAIL_USER; 
+const EMAIL_TO = process.env.EMAIL_TO || EMAIL_USER;
+const PORTAL_URL = (process.env.PORTAL_URL || 'http://localhost:5173').replace(/\/$/, ''); 
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -57,7 +58,7 @@ async function sendEmailAlert(alertContent, force = false) {
           </div>
           
           <div style="text-align: center;">
-            <a href="http://localhost:5173/actions" style="display: inline-block; background-color: #7c3aed; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 16px;">
+            <a href="${PORTAL_URL}/actions" style="display: inline-block; background-color: #7c3aed; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 16px;">
               View in Action History Dashboard
             </a>
           </div>
@@ -110,7 +111,7 @@ async function sendUrgentDigest(alerts, storeName = 'your store') {
           <p style="margin:0 0 20px;color:#6b7280;font-size:14px;">${alerts.length} urgent item${alerts.length > 1 ? 's need' : ' needs'} your attention for <strong>${escapeHtml(storeName)}</strong>.</p>
           ${items}
           <div style="text-align:center;margin-top:24px;">
-            <a href="http://localhost:5173/opportunities" style="display:inline-block;background:#7c3aed;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700;">Review &amp; approve in StoreSathi</a>
+            <a href="${PORTAL_URL}/opportunities" style="display:inline-block;background:#7c3aed;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700;">Review &amp; approve in StoreSathi</a>
           </div>
           <p style="text-align:center;color:#9ca3af;font-size:12px;margin-top:24px;">Automated alert from your StoreSathi AI Copilot.</p>
         </div>
