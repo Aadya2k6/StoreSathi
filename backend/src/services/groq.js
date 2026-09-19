@@ -76,10 +76,10 @@ Do not make up numbers. If the data isn't in the context, say so.
 
 --- REAL-TIME DB CONTEXT ---
 Products & Stock:
-${storeContext.products.map(p => `- ${p.name}: ${p.stock_quantity} in stock (₹${p.price})`).join('\n')}
+${storeContext.products.map(productLine).join('\n')}
 
-Recent Activity (Anomalies):
-${storeContext.anomalies.map(a => `- ${a.title}`).join('\n')}
+Open alerts (with the recommended action):
+${storeContext.anomalies.map(alertLine).join('\n')}
 
 --- MERCHANT QUESTION ---
 ${question}
@@ -99,4 +99,9 @@ ${question}
   }
 }
 
-module.exports = { analyzeWithGroqFallback, askCopilotGroq };
+// Shared by both copilot providers so Gemini and Groq see identical facts.
+const productLine = (p) =>
+  `- ${p.name} (${p.category || 'Uncategorised'}): ${p.stock_quantity} in stock, ₹${p.price}, ${p.units_14d || 0} sold in the last 14 days`;
+const alertLine = (a) => `- [${a.type}] ${a.title}: ${a.description}`;
+
+module.exports = { analyzeWithGroqFallback, askCopilotGroq, productLine, alertLine };

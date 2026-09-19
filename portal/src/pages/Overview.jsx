@@ -143,12 +143,12 @@ function Overview() {
               <tbody>
                 {products.map((p) => (
                   <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '0.9rem' }}>
-                    <td style={{ padding: '14px', fontWeight: 600, color: '#f3f4f6' }}>{p.name}</td>
+                    <td style={{ padding: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{p.name}</td>
                     <td style={{ padding: '14px', color: 'var(--text-muted)' }}>{p.category}</td>
                     <td style={{ padding: '14px', color: p.stock_quantity < 10 ? '#f87171' : '#34d399', fontWeight: 700 }}>
                       {p.stock_quantity} units
                     </td>
-                    <td style={{ padding: '14px', fontWeight: 700, color: '#f3f4f6' }}>₹{p.price}</td>
+                    <td style={{ padding: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>₹{p.price}</td>
                     <td style={{ padding: '14px' }}>
                       <span style={{ 
                         fontSize: '0.75rem', 

@@ -1,83 +1,61 @@
-# 🚀 StoreSathi - Action Plan (Final Addendum)
+# StoreSathi — Plan
 
-*Note: The following plan reflects the final implemented state of the platform:*
-- **Multi-Tenant Authentication:** Completely isolated tenant dashboard. New merchants can sign up, generating a unique `store_id`, and log into both the Portal and Chrome Extension.
-- **Database Backend:** Switched to DuckDB running inside a Node.js orchestration backend (`/backend`).
-- **Intelligence Engine:** Implemented using Gemini-Flash with a robust fallback to Groq (`qwen3.8-27b`) when API limits are hit.
-- **Plugin Synchronization & Auto-Ingestion:** 
-  - The Chrome Plugin provides a full login flow synced with the portal.
-  - **Live Auto-Ingestion:** When a merchant scrapes a product from their own website and clicks "Approve", the item is automatically ingested into their portal's DuckDB inventory.
-- **Competitor Tracking & Auto-Email:** 
-  - If a merchant visits a competitor's website, the plugin generates AI alerts based on pricing, stock urgency, and ratings. 
-  - An automatic email notification via Nodemailer is dispatched instantly upon analysis.
-- **Automation:** Added `cronService.js` in the backend that periodically triggers `opportunityEngine.js` to detect `low_stock`, `underpriced`, and `slow_moving` items, generating actionable campaign recommendations.
+Track: Merchant Growth AI · Team pink_code
 
-# 🚀 StoreSathi - Action Plan (Refined)
+## 1. Goal
 
-**Team:** pink_code · **Track:** Merchant Growth AI
+Give small merchants an AI copilot that finds inventory and growth problems, explains them with real numbers, and fixes them in one click, plus flags market trends while they browse the web.
 
-## 0. Non-negotiable framing
+## 2. The demo (golden path)
 
-The judging moment is the **golden path**:
-```
-    → SIGNUP → PLUGIN LOGIN → LIVE SCRAPE → AUTO-EMAIL → APPROVE/INGEST → CAMPAIGN GENERATOR → COPILOT
-```
+**Signup → Feed the store → Alerts → Approve (live storefront change) → Campaign → Copilot → Market trends**
 
-Everything in this plan has been built to make this exact story work live, on real data, without a network hiccup killing it.
+| # | Step | What the audience sees |
+|---|---|---|
+| 1 | Sign up on the portal | Empty dashboard for a new store |
+| 2 | Open `demo.html`, click **Approve & Feed to Portal** | Products appear in the portal |
+| 3 | Show alerts in the sidebar | Low stock, slow-moving clearance, weather, each with exact numbers |
+| 4 | **Approve** an alert | Storefront price/stock changes live; Action History updates; email/SMS arrive |
+| 5 | Campaigns → Generate → Broadcast | AI-written message; the result lists the channels that really delivered |
+| 6 | Ask the copilot "Which product should I restock first?" | Answer using real stock, prices and alerts |
+| 7 | Open a floral-dress page on another site | Only the matching trend card; approving it launches a campaign; the page is not modified |
 
----
+## 3. What is built
 
-## 1. Final Implemented Architecture
+- **Ingest:** extension scrapes the storefront and syncs the catalogue per store.
+- **Rules engine:** low stock, slow-moving, demand spike, growth, weather, trend; every alert carries a structured action.
+- **Approve executes:** updates the product in the database, logs the action, mirrors the change on the live page, creates campaigns, and notifies.
+- **Notifications:** WhatsApp, SMS and email, with honest per-channel delivery reporting; automatic email digest for urgent alerts; hourly cron.
+- **AI:** Gemini primary, Groq fallback, deterministic rules if both fail; copilot grounded in real store data.
+- **Trends mode:** on non-store sites the sidebar shows only relevant market trends.
+- **Portal:** login/signup, overview, alerts, action history, campaigns, copilot.
+- **Shared login:** portal login carries into the extension on every site.
+- **Billing:** sales with idempotency key and PDF receipts.
 
-### Backend & Orchestration (Port 3000)
-- **Node.js/Express:** Serves API endpoints for auth, intelligence, cron, and copilot.
-- **DuckDB:** In-memory lightning-fast analytics database (`data/store.db`).
-- **Gemini / Groq Integration:** Fallback routing ensures 100% uptime for AI Copilot and rules engine.
+## 4. Test checklist
 
-### Frontend Portal (Port 5173)
-- **React + Vite:** Handles the merchant dashboard.
-- **Authentication:** Tenant isolation enforced via `localStorage` and `portal_token`. No store-switcher.
-- **Actions & Campaigns:** UI fully wired to backend `/actions` and `/campaigns` tables.
+1. Start the backend and portal; reload the extension; serve and open `demo.html`.
+2. Sign up, log in to the portal once, then run **Approve & Feed** and confirm the portal shows the products.
+3. Confirm low-stock alerts appear first and their text matches the data.
+4. Approve a restock and a price cut; confirm the page, the portal and Action History all agree, and that approving again is blocked.
+5. Confirm the notification arrives on each configured channel.
+6. Generate and broadcast a campaign; confirm the message names the delivering channels.
+7. Ask the five copilot questions; confirm answers match the data.
+8. Open a trend-relevant page and an unrelated page on another site; confirm trend card vs. "No new trends", and no inventory alerts.
+9. Reset between rehearsals: `POST /api/intelligence/reset-demo?store_id=<id>` (`&products=true` for a full wipe), then feed again.
 
-### Chrome Extension
-- **Sidebar UI:** A floating FAB injects the copilot and recommendation sidebar into any website.
-- **Message Passing:** `content.js` talks to `background.js` to bypass CORS, securely authenticating via `POST /api/auth/login`.
+## 5. Before the demo
 
----
+- Regenerate the Meta WhatsApp token and send "hi" to the test number (needed every 24 hours).
+- Keep `DEMO_FORCE_COLD_SNAP=true` so the weather alert shows.
+- Log in to the portal once so the extension picks up the account.
+- Record a backup video of a clean run.
 
-## 2. The Final Golden Path Demo
+## 6. Next steps (after the hackathon)
 
-### Step 1: The New Merchant
-- Open Portal Login. Click **"Sign Up"**.
-- Create a new merchant account. The dashboard loads empty for this tenant.
-
-### Step 2: The Store Ingestion (Data Feeding)
-- Merchant opens their storefront/website (e.g. `demo.html` or online shop).
-- StoreSathi plugin automatically scrapes all products visible on the website.
-- In the plugin, an ingestion card appears: **"📦 Live Store Data Detected: Found X products on your website"**.
-- The merchant clicks **"📥 Approve & Feed to Portal"**.
-- Products are bulk-synced live via `POST /api/catalogue/bulk-sync` into DuckDB for this merchant's `store_id`.
-- The merchant opens the Portal: the inventory and metrics are now populated dynamically with live store data!
-
-### Step 3: AI Alerts & Live Website Modification on "Approve Action"
-- Merchant receives AI recommendations on their storefront (Price drops, Restock, Trend campaigns).
-- When the merchant clicks **"Approve Action"** in the plugin:
-  1. **Live Website DOM Update**: The merchant's live storefront modifies immediately (e.g. price strikethrough to AI discount price, stock badge turning green, or top campaign banner appearing).
-  2. **Database Execution**: Action logged to `actions` & `recommendations` table in DuckDB.
-  3. **Notification**: Automated email dispatched to merchant confirming execution.
-  4. **Portal Sync**: Action History screen (`/actions`) updates in real time.
-
-### Step 4: Competitor Browsing & Automated Email Alerts
-- Merchant browses any external/competitor website.
-- Plugin scrapes live competitor pricing & stock status.
-- Automated email alert is fired directly to merchant's Gmail highlighting the market shift.
-
-### Step 5: AI Copilot & Campaigns
-- Merchant uses the manual Campaign Generator in the portal.
-- Merchant chats with Copilot (in portal or plugin) asking about live stock, sales velocity, or recommended discounts.
-
----
-
-## 3. Judging narrative (keep this on an index card)
-
-> "StoreSathi transforms the merchant workflow. Sign up with an empty dashboard, open your store website, and click 'Approve & Feed' to ingest your catalog live. When AI generates pricing or restock recommendations, clicking 'Approve Action' dynamically alters your storefront in real time, sends automated email alerts, and syncs your portal. Pure live automation with zero hardcoding."
+1. Token-based authentication and per-store access control.
+2. Shared database (Postgres) and hosted deployment with configurable URLs.
+3. Real trend sources (search/social trend APIs) in place of the simulated feed.
+4. Paytm sales and payments data as the input to the rules.
+5. Production WhatsApp Business account with approved templates and button approvals.
+6. Register each merchant's real store URL instead of the `STORE_PAGES` list.

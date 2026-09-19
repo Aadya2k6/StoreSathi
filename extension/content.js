@@ -1,18 +1,49 @@
 console.log("StoreSathi: Plugin Widget loaded on page:", window.location.href);
 
-// Auto-sync portal store login if on localhost:5173
+// ─── Shared login ────────────────────────────────────────────────────────────
+// localStorage is per website, so the login is mirrored into chrome.storage.local, which every site shares.
+// That way logging in on the portal (or once anywhere) also logs in the sidebar on demo.html, Amazon, etc.
+const LOGIN_KEYS = ['storeSathi_token', 'storeSathi_storeId', 'storeSathi_storeName'];
+
+function extStorage() {
+  try { return (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) ? chrome.storage.local : null; }
+  catch (e) { return null; }
+}
+function saveLogin() {
+  const st = extStorage();
+  if (!st) return;
+  const out = {};
+  LOGIN_KEYS.forEach(k => { const v = localStorage.getItem(k); if (v !== null) out[k] = v; });
+  st.set(out);
+}
+function clearLogin() {
+  const st = extStorage();
+  if (st) st.remove(LOGIN_KEYS);
+}
+function loadLogin(done) {
+  const st = extStorage();
+  if (!st) return done();
+  st.get(LOGIN_KEYS, (saved) => {
+    if (saved && saved.storeSathi_storeId) {
+      LOGIN_KEYS.forEach(k => { if (saved[k]) localStorage.setItem(k, saved[k]); });
+    }
+    done();
+  });
+}
+
+// Auto-sync portal store login if on localhost:5173 (the portal is the source of truth for who is logged in)
 if (window.location.origin.includes('localhost:5173')) {
   const portalStoreId = localStorage.getItem('portal_storeId');
-  const portalUser = localStorage.getItem('portal_user');
+  const portalStoreName = localStorage.getItem('portal_storeName');
   if (portalStoreId) {
     localStorage.setItem('storeSathi_token', 'true');
     localStorage.setItem('storeSathi_storeId', portalStoreId);
-    if (portalUser) {
-      try {
-        const u = JSON.parse(portalUser);
-        localStorage.setItem('storeSathi_storeName', u.store_name || u.email);
-      } catch(e) {}
-    }
+    if (portalStoreName) localStorage.setItem('storeSathi_storeName', portalStoreName);
+    saveLogin();
+  } else {
+    // Logged out of the portal -> log the sidebar out everywhere too
+    LOGIN_KEYS.forEach(k => localStorage.removeItem(k));
+    clearLogin();
   }
 }
 
@@ -101,6 +132,7 @@ function injectSidebar() {
         localStorage.setItem('storeSathi_token', 'true');
         localStorage.setItem('storeSathi_storeId', response.user.store_id);
         localStorage.setItem('storeSathi_storeName', response.user.store_name || response.user.email);
+        saveLogin();
         showMainView();
       }
     });
@@ -692,6 +724,10 @@ function approveAction(id, btnElement) {
 
 // Initialize
 if (!document.getElementById('storesathi-fab')) {
-  injectFAB();
-  injectSidebar();
+  loadLogin(() => {
+    if (!document.getElementById('storesathi-fab')) {
+      injectFAB();
+      injectSidebar();
+    }
+  });
 }

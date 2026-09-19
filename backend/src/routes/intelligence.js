@@ -36,7 +36,7 @@ router.post('/trends', async (req, res) => {
 
 // POST /api/intelligence/reset-demo
 // Rehearsal helper: clears this store's alerts, action history, restock log, snapshots and
-// opportunities so the golden path can be run again. Products are NOT touched — re-run
+// opportunities so the golden path can be run again. Products are NOT touched (unless ?products=true) — re-run
 // "Approve & Feed to Portal" on the storefront to restore the page's prices/stock.
 router.post('/reset-demo', async (req, res) => {
   try {
@@ -47,6 +47,14 @@ router.post('/reset-demo', async (req, res) => {
     await dbRun('DELETE FROM snapshots WHERE store_id = ?', storeId);
     await dbRun('DELETE FROM alert_emails WHERE store_id = ?', storeId);
     await dbRun('DELETE FROM opportunities WHERE store_id = ?', storeId);
+    if (req.query.products === 'true') {
+      // Full wipe of what the extension fed in: catalogue, stock history and sales
+      await dbRun('DELETE FROM sale_items WHERE sale_id IN (SELECT id FROM sales WHERE store_id = ?)', storeId);
+      await dbRun('DELETE FROM sales WHERE store_id = ?', storeId);
+      await dbRun('DELETE FROM inventory_movements WHERE store_id = ?', storeId);
+      await dbRun('DELETE FROM products WHERE store_id = ?', storeId);
+      return res.json({ status: 'ok', message: `All synced data cleared for ${storeId} (products, alerts, actions, stock history).` });
+    }
     res.json({ status: 'ok', message: `Demo state reset for ${storeId}. Re-run "Approve & Feed to Portal" to restore product prices/stock.` });
   } catch (error) {
     res.status(500).json({ error: 'Reset failed', details: error.message });
@@ -412,10 +420,10 @@ router.get('/stats', (req, res) => {
     SELECT 
       (SELECT COUNT(*) FROM products WHERE store_id = ?) as totalProducts,
       (SELECT COUNT(*) FROM recommendations WHERE store_id = ?) as totalOpportunities,
-      (SELECT COUNT(*) FROM actions) as activeAlerts
+      (SELECT COUNT(*) FROM actions a JOIN recommendations r ON a.recommendation_id = r.id WHERE r.store_id = ?) as activeAlerts
   `;
 
-  con.all(query, storeId, storeId, (err, rows) => {
+  con.all(query, storeId, storeId, storeId, (err, rows) => {
     if (err) {
       console.error('Stats query error:', err);
       return res.status(500).json({ error: 'Failed to fetch stats', details: err.message });
@@ -435,7 +443,7 @@ router.get('/stats', (req, res) => {
 // POST /api/copilot/chat
 // Powers the AI Copilot widget in the portal
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { askCopilotGroq } = require('../services/groq');
+const { askCopilotGroq, productLine, alertLine } = require('../services/groq');
 
 router.post('/copilot/chat', async (req, res) => {
   try {
@@ -451,9 +459,17 @@ router.post('/copilot/chat', async (req, res) => {
 
     // Gather Context
     const [products, anomalies] = await Promise.all([
-      new Promise((resolve, reject) => con.all('SELECT * FROM products WHERE store_id = ?', storeId, (err, rows) => err ? reject(err) : resolve(rows))),
-      new Promise((resolve, reject) => con.all("SELECT * FROM recommendations WHERE store_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 5", storeId, (err, rows) => err ? reject(err) : resolve(rows)))
+      dbAll('SELECT * FROM products WHERE store_id = ?', storeId),
+      dbAll("SELECT * FROM recommendations WHERE store_id = ? AND status = 'active'", storeId)
     ]);
+    // Units sold per product over the last 14 days, so the copilot can talk about real sales velocity
+    const since = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString();
+    const sold = await dbAll(
+      'SELECT si.product_id, SUM(si.quantity) AS units FROM sale_items si JOIN sales s ON si.sale_id = s.id WHERE s.store_id = ? AND s.created_at >= ? GROUP BY si.product_id',
+      storeId, since);
+    const soldById = new Map(sold.map(r => [r.product_id, Number(r.units)]));
+    products.forEach(p => { p.units_14d = soldById.get(p.id) || 0; });
+    anomalies.splice(0, anomalies.length, ...rulesEngine.prioritizeRecs(anomalies, 12));
     const storeContext = { storeId, products, anomalies };
 
     // Function to save assistant reply to DB
@@ -470,8 +486,10 @@ router.post('/copilot/chat', async (req, res) => {
       
       const prompt = `You are the StoreSathi AI Copilot. Use this context to answer the merchant's question directly.
 Context:
-Products: ${products.map(p => `- ${p.name}: ${p.stock_quantity} in stock (₹${p.price})`).join('\n')}
-Recent Alerts: ${anomalies.map(a => `- ${a.title}`).join('\n')}
+Products:
+${products.map(productLine).join('\n')}
+Open alerts (with the recommended action):
+${anomalies.map(alertLine).join('\n')}
 
 Question: ${message}`;
       
