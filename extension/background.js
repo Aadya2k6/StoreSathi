@@ -1,6 +1,6 @@
 // Backend URL. Local dev: http://localhost:3000. After hosting, set this to your deployed backend, e.g.
 // https://storesathi-api.onrender.com  (no trailing slash), then reload the extension.
-const API_BASE = 'http://localhost:3000';
+const API_BASE = 'https://storesathi.onrender.com';
 
 console.log("StoreSathi: Background service worker loaded.");
 
