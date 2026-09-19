@@ -141,7 +141,17 @@ Light theme only, no dark mode, glassmorphism-friendly.
 - Whether opportunity detection is pure heuristic/rules or LLM-assisted for v1.
 - Which store platforms get Tier B (direct execute) vs Tier A (draft & guide) in the hackathon build.
 - WhatsApp Business number provisioning/sandbox setup timeline (Meta approval lead time).
-# StoreSathi — Architecture v2
+# 🏗️ StoreSathi - Architecture (Addendum)
+*Note: The following architecture has been updated:*
+- **Backend Orchestration:** Node.js Express server (`/backend`) coordinates the entire system, exposing REST APIs (`/api/intelligence`, `/api/campaigns`, `/api/opportunities`).
+- **Database:** Local **DuckDB** instance (`data/store.db`) used for lightning-fast embedded analytics and persistence of `opportunities`, `chat_messages`, `products`, `users` etc.
+- **AI Copilot & Intelligence Engine:** The backend handles LLM routing. It attempts to use `gemini-flash-latest` via `@google/generative-ai` first. If rate-limits are hit, it instantly falls back to `Groq` SDK using `qwen/qwen3.8-27b`.
+- **Plugin Synchronization & Auto-Ingestion:** The Chrome Extension sends REST payloads (`fetch` calls) directly to `localhost:3000`. When live alerts are approved, the backend **automatically ingests** the scraped product into the merchant's DuckDB inventory.
+- **Competitor Tracking & Auto-Email:** If a merchant visits a competitor's website, the plugin generates AI alerts and the backend **automatically triggers a Nodemailer Gmail notification**.
+- **Background Cron:** Automated job `cronService.js` periodically triggers rule evaluation (including `low_stock`) and uses Nodemailer to send email alerts.
+- **Frontend Security:** React frontend implements a Login gate verified against the DuckDB `users` table to ensure strict tenant isolation (no store-switcher).
+
+# 🏗️ StoreSathi - Technical Architecture (v2)
 
 **Track:** Merchant Growth AI  
 **Team:** pink_code  
@@ -176,8 +186,6 @@ The main problem was product alignment: the original center of gravity was **onl
 - Product catalogue
 - In-app billing / POS-like sale entry
 - Receipt/invoice generation
-- Bill/invoice OCR
-- OCR review and correction step
 - Sales ledger
 - Inventory ledger
 - Customer/transaction aggregates
@@ -187,8 +195,6 @@ The main problem was product alignment: the original center of gravity was **onl
 - Growth/offer recommendations
 - Action center
 - Optional Paytm integration adapter
-- Optional cloud OCR provider
-- Provider abstraction for AI/OCR so the system is not tied to one vendor
 
 ### Reposition
 
@@ -246,7 +252,6 @@ StoreSathi is a merchant-specific AI business partner.
 
 It should not feel like:
 
-> "ChatGPT + a dashboard + OCR."
 
 It should feel like:
 
@@ -387,8 +392,7 @@ After the action:
                  │                      │                      │
                  ▼                      ▼                      ▼
         ┌────────────────┐     ┌────────────────┐    ┌─────────────────┐
-        │ Command Center │     │ Billing / POS  │    │ OCR Upload      │
-        │ React Web App  │     │ Create Sale    │    │ Bill / Sheet    │
+        │ Store Plugin Widget  │     │ Create Sale    │    │ Bill / Sheet    │
         └───────┬────────┘     └───────┬────────┘    └────────┬────────┘
                 │                      │                      │
                 └──────────────────────┼──────────────────────┘
@@ -401,7 +405,6 @@ After the action:
                            │ Ingestion              │
                            │ Billing                │
                            │ Inventory              │
-                           │ OCR Orchestration      │
                            │ AI Orchestration       │
                            │ Recommendations        │
                            │ Actions / State Machine│
@@ -418,9 +421,7 @@ After the action:
    │ Products         │     │ Rules Engine     │     │ Paytm Adapter    │
    │ Sales            │     │ Analytics        │     │ WhatsApp         │
    │ Inventory        │     │ Forecasting      │     │ Chrome Extension │
-   │ Customers/Aggr.  │     │ LLM              │     │ OCR Provider     │
    │ Actions          │     │ Recommendation   │     │                  │
-   │ OCR documents    │     │ Engine           │     │                  │
    └────────┬─────────┘     └────────┬─────────┘     └──────────────────┘
             │                        │
             └──────────────┬─────────┘
@@ -571,7 +572,6 @@ This removes the need for the merchant to separately update inventory.
 
 ---
 
-## 6.5 OCR Import
 
 Two primary use cases:
 
@@ -580,7 +580,6 @@ Two primary use cases:
 ```text
 Upload bill/photo
        ↓
-OCR
        ↓
 Extracted fields
        ↓
@@ -596,7 +595,6 @@ Transaction / inventory update
 ```text
 Upload image
        ↓
-OCR
        ↓
 Product + price + quantity extraction
        ↓
@@ -605,7 +603,6 @@ Merchant review
 Create/update catalogue
 ```
 
-Never automatically commit uncertain OCR output.
 
 ---
 
@@ -763,21 +760,17 @@ If the same request arrives twice, return the original sale rather than creating
 
 ---
 
-# 8. OCR Architecture
 
 ## 8.1 GPU requirement
 
 **No GPU is required.**
 
-OCR and AI are designed to run through CPU-friendly libraries and/or external APIs.
 
 ## 8.2 Provider abstraction
 
 Create:
 
 ```text
-interface OCRProvider {
-  extractText(document): OCRResult
 }
 ```
 
@@ -788,13 +781,11 @@ LocalTesseractProvider
 CloudVisionProvider (optional)
 ```
 
-This lets the hackathon build work without a paid OCR service.
 
 ## 8.3 Recommended hackathon strategy
 
 ### Default
 
-**Tesseract OCR**
 
 - local
 - CPU
@@ -802,16 +793,12 @@ This lets the hackathon build work without a paid OCR service.
 - no GPU
 - free/open-source
 
-### Simplest alternative — Manual/CSV entry (no OCR at all)
 
-If OCR setup risks eating build time, **skip OCR entirely** and let the same
 "Upload bill" / "Upload inventory sheet" screens accept:
 
 - a manual line-item entry form (product, qty, price), or
-- a CSV/paste-text box that goes straight into the same document parser step (§8.4) that OCR would have fed.
 
 This satisfies the same product contract — "raw input → structured candidate
-data → merchant review → commit" — without depending on OCR being installed
 or accurate on stage. It becomes the **P0 fallback path**; Tesseract becomes
 an enhancement on top of it, not a dependency the demo requires.
 
@@ -819,9 +806,7 @@ an enhancement on top of it, not a dependency the demo requires.
 
 **Google Cloud Vision**
 
-Useful when the image is difficult or the local OCR result is poor. Cloud Vision supports `TEXT_DETECTION` and `DOCUMENT_TEXT_DETECTION`; Google documents API-key and application/service-account authentication options.
 
-## 8.4 OCR pipeline
 
 ```text
 Image/PDF
@@ -835,7 +820,6 @@ Preprocess
    ├─ crop/deskew where possible
    └─ orientation detection
    ↓
-OCR
    ↓
 Raw text + bounding boxes
    ↓
@@ -850,7 +834,6 @@ Merchant review
 Commit
 ```
 
-## 8.5 Structured OCR output
 
 ```json
 {
@@ -1136,8 +1119,6 @@ inventory_movement
 sale
 sale_item
 customer
-ocr_document
-ocr_extraction
 recommendation
 action
 action_event
@@ -1204,7 +1185,6 @@ backend/
 ├── billing/
 ├── inventory/
 ├── sales/
-├── ocr/
 ├── analytics/
 ├── intelligence/
 ├── copilot/
@@ -1268,13 +1248,8 @@ GET  /api/inventory/risks
 POST /api/inventory/restock-suggestion/:productId
 ```
 
-## OCR
 
 ```http
-POST /api/ocr/upload
-GET  /api/ocr/:documentId
-POST /api/ocr/:documentId/confirm
-POST /api/ocr/:documentId/reject
 ```
 
 ## AI
@@ -1567,7 +1542,6 @@ Minimum requirements:
 - webhook signature verification
 - upload size/type validation
 - filename sanitization
-- OCR document access controlled by merchant/store
 - audit logs for important actions
 
 Never put:
@@ -1604,14 +1578,12 @@ Keep it server-side only.
 
 ---
 
-## 27.2 OCR — choose one path
 
 ### Path A: zero API key
 
 **Tesseract**
 
 ```text
-OCR_PROVIDER=tesseract
 ```
 
 No API key.
@@ -1620,21 +1592,17 @@ Best for:
 
 - demo
 - simple printed bills
-- local/offline OCR
 
-### Path B: cloud OCR
 
 **Google Cloud Vision**
 
 ```text
-OCR_PROVIDER=google
 GOOGLE_CLOUD_PROJECT_ID=...
 GOOGLE_APPLICATION_CREDENTIALS=...
 ```
 
 or an appropriately secured API-key configuration.
 
-Use this when better OCR accuracy is needed.
 
 Do not require both providers to run the MVP.
 
@@ -1733,10 +1701,7 @@ JWT_SECRET=change_me_for_local_development
 # AI
 OPENAI_API_KEY=
 
-# OCR
-OCR_PROVIDER=tesseract
 
-# Optional Google Cloud Vision OCR
 GOOGLE_CLOUD_PROJECT_ID=
 GOOGLE_APPLICATION_CREDENTIALS=
 
@@ -1783,7 +1748,6 @@ DATABASE_URL=
 5. Existing Chrome extension
 ```
 
-## Higher OCR quality
 
 Add:
 
@@ -1886,7 +1850,6 @@ Rajesh General Store
 ```text
 Photo
  ↓
-OCR
  ↓
 47 products detected
  ↓
@@ -1979,8 +1942,6 @@ BILL → DATA → SALE → INVENTORY → INSIGHT → PREDICTION → ACTION
 - Create sale
 - Inventory update from sale
 - Dashboard
-- OCR upload
-- OCR review/confirmation
 - Sales analytics
 - Inventory analytics
 - Rule-based recommendations
@@ -2054,7 +2015,6 @@ Goal:
 
 ---
 
-## Phase 3 — OCR
 
 Build:
 
@@ -2146,7 +2106,6 @@ Add:
 
 - existing Chrome extension
 - Paytm adapter
-- optional cloud OCR
 
 Goal:
 
@@ -2171,7 +2130,6 @@ Here are the calculated facts:
 
 The dashboard and deterministic analytics still work.
 
-## OCR unavailable
 
 Allow:
 
@@ -2189,7 +2147,6 @@ Use existing imported/mock transaction data.
 
 ## Chrome extension unavailable
 
-Use billing/OCR/manual data.
 
 The product must not have a single external-service failure that destroys the entire demo.
 
@@ -2203,7 +2160,6 @@ For the hackathon, log:
 - merchant/store ID
 - operation
 - duration
-- OCR provider
 - AI provider
 - recommendation ID
 - action ID
@@ -2241,11 +2197,9 @@ Principles:
 
 **Keep.** Optional connector, not core.
 
-### Decision: OCR
 
 **Keep, but not required.** It is the onboarding/data-capture mechanism, not
 the headline feature. Manual/CSV entry (§8.3) feeds the exact same review →
-commit pipeline and is the P0 fallback if OCR setup or accuracy risks the demo.
 
 ### Decision: Billing
 
@@ -2253,9 +2207,7 @@ commit pipeline and is the P0 fallback if OCR setup or accuracy risks the demo.
 
 ### Decision: Tesseract
 
-**Default local OCR.** No GPU and no API key.
 
-### Decision: Cloud OCR
 
 **Optional fallback.** Use only if needed for accuracy.
 
@@ -2289,7 +2241,6 @@ commit pipeline and is the P0 fallback if OCR setup or accuracy risks the demo.
                  ├────────────────────┤
                  │ Dashboard          │
                  │ Billing / POS      │
-                 │ OCR Upload         │
                  │ Inventory         │
                  │ AI Copilot        │
                  │ Recommendations   │
@@ -2303,7 +2254,6 @@ commit pipeline and is the P0 fallback if OCR setup or accuracy risks the demo.
                 │ Auth / Tenant Mgmt     │
                 │ Sales / Billing        │
                 │ Inventory              │
-                │ OCR Orchestration      │
                 │ Analytics              │
                 │ Intelligence           │
                 │ Copilot                │
@@ -2321,7 +2271,6 @@ commit pipeline and is the P0 fallback if OCR setup or accuracy risks the demo.
     │ DuckDB      │  │ Rules        │  │ Paytm        │
     │ Products    │  │ Analytics    │  │ WhatsApp     │
     │ Sales       │  │ Forecasting  │  │ Chrome Ext.  │
-    │ Inventory   │  │ OpenAI       │  │ OCR          │
     │ Actions     │  │              │  │              │
     └─────────────┘  └──────────────┘  └──────────────┘
 
@@ -2377,7 +2326,6 @@ Then add:
 ```text
 WhatsApp
 Paytm
-Cloud OCR
 ```
 
 only when the corresponding integration is actually available.

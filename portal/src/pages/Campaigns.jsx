@@ -28,7 +28,7 @@ const Campaigns = () => {
 
   const fetchMetrics = async () => {
     try {
-      const res = await fetch('/api/campaigns/audience');
+      const res = await fetch(`/api/campaigns/audience?store_id=${encodeURIComponent(localStorage.getItem('portal_storeId') || 'store_1')}`);
       if (res.ok) {
         const data = await res.json();
         setMetrics(data);
@@ -63,7 +63,7 @@ const Campaigns = () => {
       const res = await fetch('/api/campaigns/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ occasion, discount_pct: discountPct, store_name: 'StoreSathi Supermart' })
+        body: JSON.stringify({ occasion, discount_pct: discountPct, store_name: localStorage.getItem('portal_storeName') || 'StoreSathi Supermart' })
       });
       if (res.ok) {
         const data = await res.json();
@@ -86,7 +86,8 @@ const Campaigns = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           campaign: generatedCampaign,
-          audience_tier: audienceTier
+          audience_tier: audienceTier,
+          store_id: localStorage.getItem('portal_storeId') || 'store_1'
         })
       });
       const data = await res.json();

@@ -2,8 +2,8 @@ const { v4: uuidv4 } = require('uuid');
 const { con } = require('../db');
 
 // --- Loyalty Engine (Data Access) ---
-const getAudienceMetrics = () => new Promise((resolve, reject) => {
-  con.all('SELECT * FROM customers', (err, rows) => {
+const getAudienceMetrics = (storeId) => new Promise((resolve, reject) => {
+  con.all('SELECT * FROM customers WHERE store_id = ?', storeId, (err, rows) => {
     if (err) return reject(err);
     if (!rows) rows = [];
 
@@ -27,16 +27,16 @@ const getAudienceMetrics = () => new Promise((resolve, reject) => {
   });
 });
 
-const getCustomersByTier = (tierFilter) => new Promise((resolve, reject) => {
-  let query = 'SELECT * FROM customers';
-  let params = [];
+const getCustomersByTier = (tierFilter, storeId) => new Promise((resolve, reject) => {
+  let query = 'SELECT * FROM customers WHERE store_id = ?';
+  let params = [storeId];
 
   if (tierFilter && tierFilter !== 'All') {
     if (tierFilter === 'Regular') {
       // Include both VIP and Regular
-      query += ` WHERE loyalty_tier IN ('VIP Regular', 'Regular')`;
+      query += ` AND loyalty_tier IN ('VIP Regular', 'Regular')`;
     } else {
-      query += ` WHERE loyalty_tier = ?`;
+      query += ` AND loyalty_tier = ?`;
       params.push(tierFilter);
     }
   }
@@ -129,7 +129,32 @@ const getCampaignHistory = () => new Promise((resolve, reject) => {
   });
 });
 
+// Demo helper: a brand-new store has no customer list yet, so give it a small sample audience
+// (the first customer uses RECIPIENT_PHONE so a broadcast lands on the merchant's own phone).
+const ensureDemoCustomers = (storeId) => new Promise((resolve, reject) => {
+  con.all('SELECT count(*) AS c FROM customers WHERE store_id = ?', storeId, (err, rows) => {
+    if (err) return reject(err);
+    if (Number(rows[0].c) > 0) return resolve(false);
+    const now = new Date().toISOString();
+    const sample = [
+      ['Aadya', process.env.RECIPIENT_PHONE || '9000000001', 'VIP Regular', 15000],
+      ['Rohan', '9000000002', 'Regular', 4000],
+      ['Meera', '9000000003', 'Regular', 3200],
+      ['Kabir', '9000000004', 'Occasional', 900],
+    ];
+    let i = 0;
+    const next = () => {
+      if (i >= sample.length) return resolve(true);
+      const [name, phone, tier, spent] = sample[i++];
+      con.run('INSERT INTO customers (id, store_id, name, phone, loyalty_tier, total_spent, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        `cust_${storeId}_${i}`, storeId, name, phone, tier, spent, now, (e) => (e ? reject(e) : next()));
+    };
+    next();
+  });
+});
+
 module.exports = {
+  ensureDemoCustomers,
   getAudienceMetrics,
   getCustomersByTier,
   generateCampaign,

@@ -1,123 +1,423 @@
-/* Glassmorphism Sidebar Styles */
-#storesathi-sidebar-root {
+/* Floating Action Button */
+#storesathi-fab {
   position: fixed;
-  top: 20px;
-  right: -400px; /* Hidden initially */
-  width: 350px;
-  height: auto;
-  max-height: calc(100vh - 40px);
-  z-index: 2147483647; /* Maximum possible z-index */
-  background: rgba(250, 247, 251, 0.85); /* --bg-base with opacity */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6); /* --border-glass */
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #3A3550; /* --text-primary */
-  transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-sizing: border-box;
-  overflow-y: auto;
-}
-
-#storesathi-sidebar-root.visible {
-  right: 20px;
-}
-
-#storesathi-sidebar-root .ss-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-#storesathi-sidebar-root .ss-logo {
-  font-weight: 700;
-  font-size: 16px;
-  color: #8E7CC3; /* --primary-deep */
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-#storesathi-sidebar-root .ss-close {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: #7A748F; /* --text-muted */
-  padding: 4px;
-}
-
-#storesathi-sidebar-root .ss-opportunity-card {
-  background: rgba(255, 255, 255, 0.55); /* --surface-glass */
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 16px;
-}
-
-#storesathi-sidebar-root .ss-tag {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 10px;
-}
-
-#storesathi-sidebar-root .ss-tag.underpriced  { background: #A8E6CF; color: #1f5742; } /* --accent-mint */
-#storesathi-sidebar-root .ss-tag.response_gap { background: #FFB6C1; color: #5e2630; } /* --accent-pink */
-#storesathi-sidebar-root .ss-tag.slow_moving  { background: #FFD3B4; color: #6b4122; } /* --accent-peach */
-#storesathi-sidebar-root .ss-tag.price_watch  { background: #D8C4F0; color: #4a3070; } /* soft lavender */
-
-#storesathi-sidebar-root .ss-headline {
-  font-size: 16px;
-  font-weight: 700;
-  margin: 0 0 8px 0;
-  line-height: 1.3;
-}
-
-#storesathi-sidebar-root .ss-reason {
-  font-size: 13px;
-  color: #7A748F; /* --text-muted */
-  margin: 0 0 12px 0;
-  line-height: 1.5;
-}
-
-#storesathi-sidebar-root .ss-action {
-  font-size: 14px;
-  font-weight: 500;
-  color: #3A3550;
-  background: rgba(179, 157, 219, 0.15); /* --primary with low opacity */
-  padding: 10px;
-  border-radius: 8px;
-  border-left: 4px solid #B39DDB; /* --primary */
-  margin: 0 0 16px 0;
-}
-
-#storesathi-sidebar-root .ss-button {
-  width: 100%;
-  background: #B39DDB; /* --primary */
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
   color: white;
-  border: none;
-  padding: 12px;
-  border-radius: 24px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+  cursor: pointer;
+  z-index: 2147483647; /* Max z-index to stay above everything */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+#storesathi-fab:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+}
+
+/* Sidebar Container */
+#storesathi-sidebar {
+  position: fixed;
+  top: 0;
+  right: -420px; /* Hidden by default */
+  width: 400px;
+  height: 100vh;
+  background: rgba(17, 24, 39, 0.85); /* Dark transparent */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.3);
+  z-index: 2147483646;
+  transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #f3f4f6;
+  box-sizing: border-box;
+}
+
+#storesathi-sidebar.open {
+  right: 0;
+}
+
+/* Header */
+#storesathi-sidebar .ss-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#storesathi-sidebar .ss-logo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: linear-gradient(to right, #a78bfa, #f472b6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+#storesathi-sidebar .ss-close-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 28px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+#storesathi-sidebar .ss-close-btn:hover {
+  color: #fff;
+}
+
+/* Content Area */
+#storesathi-sidebar .ss-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+#storesathi-sidebar .ss-greeting h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+#storesathi-sidebar .ss-greeting p {
+  margin: 0 0 24px 0;
+  font-size: 0.95rem;
+  color: #9ca3af;
+}
+
+/* Recommendation Cards */
+#storesathi-sidebar .ss-rec-card {
+  background: rgba(31, 41, 55, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  transition: transform 0.2s, background 0.2s;
+}
+
+#storesathi-sidebar .ss-rec-card:hover {
+  background: rgba(31, 41, 55, 0.9);
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+#storesathi-sidebar .ss-rec-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+#storesathi-sidebar .ss-rec-icon {
+  font-size: 1.25rem;
+}
+
+#storesathi-sidebar .ss-rec-title {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #f9fafb;
+}
+
+#storesathi-sidebar .ss-rec-desc {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #d1d5db;
+  margin-bottom: 16px;
+}
+
+#storesathi-sidebar .ss-rec-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Badges */
+#storesathi-sidebar .ss-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+#storesathi-sidebar .ss-badge-urgent {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+#storesathi-sidebar .ss-badge-high {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+#storesathi-sidebar .ss-badge-medium {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* Buttons */
+#storesathi-sidebar .ss-approve-btn {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#storesathi-sidebar .ss-approve-btn:hover {
+  background: #4338ca;
+}
+
+#storesathi-sidebar .ss-approve-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* States */
+#storesathi-sidebar .ss-loading {
+  color: #9ca3af;
+  text-align: center;
+  padding: 20px;
+  font-size: 0.95rem;
+}
+
+#storesathi-sidebar .ss-error {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+#storesathi-sidebar .ss-empty {
+  color: #9ca3af;
+  text-align: center;
+  padding: 40px 20px;
+  font-size: 1rem;
+}
+
+#storesathi-sidebar .ss-copilot-section {
+  margin-top: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+#storesathi-sidebar .ss-copilot-section h3 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: #fbbf24;
+}
+
+#ss-chat-history {
+  flex: 1;
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-right: 5px;
+}
+
+.ss-chat-msg {
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.ss-chat-msg.user {
+  align-self: flex-end;
+  background: var(--primary-accent);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.ss-chat-msg.ai {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-light);
+  border-bottom-left-radius: 4px;
+}
+
+.ss-chat-msg.error {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.ss-chat-msg.loading {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+#ss-chat-form {
+  display: flex;
   gap: 8px;
 }
 
-#storesathi-sidebar-root .ss-button:hover {
-  background: #8E7CC3; /* --primary-deep */
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(179, 157, 219, 0.4);
+#ss-chat-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 8px 12px;
+  color: white;
+  font-size: 13px;
+  outline: none;
 }
+
+#ss-chat-input:focus {
+  border-color: var(--primary-accent);
+}
+
+#ss-chat-form button {
+  background: var(--primary-accent);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 0 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+#ss-chat-form button:hover {
+  opacity: 0.9;
+}
+
+/* Ingest Store Catalog Box */
+#storesathi-sidebar .ss-ingest-box {
+  background: rgba(124, 58, 237, 0.15);
+  border: 1px solid rgba(124, 58, 237, 0.4);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 20px;
+}
+#storesathi-sidebar .ss-ingest-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #c4b5fd;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+#storesathi-sidebar .ss-ingest-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+#storesathi-sidebar .ss-ingest-sub {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin: 0 0 10px 0;
+  line-height: 1.4;
+}
+#storesathi-sidebar .ss-btn-primary {
+  width: 100%;
+  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, background 0.2s;
+}
+#storesathi-sidebar .ss-btn-primary:hover {
+  opacity: 0.95;
+}
+
+/* Dynamic Webpage Live Action Feedback */
+@keyframes ssPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.04); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+  100% { transform: scale(1); }
+}
+.ss-updated-pulse {
+  animation: ssPulse 0.5s ease-in-out 2;
+  transition: all 0.3s ease;
+}
+
+#storesathi-live-banner {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+  color: white;
+  padding: 12px 24px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.92rem;
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+  z-index: 2147483640;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  animation: ssSlideDown 0.4s ease-out;
+  font-family: Inter, system-ui, sans-serif;
+}
+@keyframes ssSlideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.ss-live-toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111827;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 12px 24px;
+  border-radius: 99px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: ssToastIn 0.3s ease-out;
+  font-family: Inter, system-ui, sans-serif;
+}
+@keyframes ssToastIn {
+  from { transform: translate(-50%, 20px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+

@@ -5,7 +5,7 @@ const productRepo = require('../repositories/productRepo');
 // GET /api/catalogue
 router.get('/', async (req, res) => {
   try {
-    const storeId = req.store_id;
+    const storeId = req.query.store_id || req.body?.store_id || req.store_id || 'store_1';
     const products = await productRepo.getProductsByStore(storeId);
     res.json(products);
   } catch (error) {
@@ -37,6 +37,30 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('Error creating product:', error);
     res.status(500).json({ error: 'Failed to create product' });
+  }
+});
+
+// POST /api/catalogue/bulk-sync
+// Dynamically ingests scraped store products directly into the merchant's portal database
+router.post('/bulk-sync', async (req, res) => {
+  try {
+    const storeId = req.body.store_id || req.query.store_id || req.store_id || 'store_1';
+    const productsList = req.body.products || [];
+
+    if (!Array.isArray(productsList) || productsList.length === 0) {
+      return res.status(400).json({ error: 'No products provided for ingestion' });
+    }
+
+    const synced = await productRepo.bulkSyncProducts(storeId, productsList);
+    res.json({
+      status: 'ok',
+      message: `Successfully ingested ${synced.length} live products into StoreSathi portal`,
+      count: synced.length,
+      data: synced
+    });
+  } catch (error) {
+    console.error('Error bulk syncing catalogue:', error);
+    res.status(500).json({ error: 'Failed to ingest products', details: error.message });
   }
 });
 

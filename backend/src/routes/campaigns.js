@@ -1,13 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const { con } = require('../db');
-const { getAudienceMetrics, generateCampaign, saveCampaign, getCampaignHistory, getCustomersByTier } = require('../services/campaignService');
-const { sendCampaignBroadcast } = require('../services/whatsapp');
+const { getAudienceMetrics, generateCampaign, saveCampaign, getCampaignHistory, getCustomersByTier, ensureDemoCustomers } = require('../services/campaignService');
+const { notifyMerchant } = require('../services/notificationService');
+
+const storeOf = (req) => req.query.store_id || req.body?.store_id || req.store_id || 'store_1';
 
 // GET /campaigns/audience
 router.get('/audience', async (req, res) => {
   try {
-    const metrics = await getAudienceMetrics();
+    const storeId = storeOf(req);
+    await ensureDemoCustomers(storeId);
+    const metrics = await getAudienceMetrics(storeId);
     res.json(metrics);
   } catch (error) {
     console.error('Error fetching audience metrics:', error);
@@ -15,11 +19,49 @@ router.get('/audience', async (req, res) => {
   }
 });
 
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { default: Groq } = require('groq-sdk');
+const { v4: uuidv4 } = require('uuid');
+
 // POST /campaigns/generate
-router.post('/generate', (req, res) => {
+router.post('/generate', async (req, res) => {
   try {
     const { occasion, discount_pct, store_name } = req.body;
+    let aiText = '';
+
+    const prompt = `You are an expert marketer for a local retail store in India named "${store_name || 'StoreSathi Supermart'}".
+Write a highly persuasive, urgent WhatsApp/SMS marketing message for the following occasion:
+Occasion: ${occasion}
+Discount: ${discount_pct}%
+
+Requirements:
+- Must be between 30 to 60 words.
+- Include emojis.
+- End with a strong call to action (e.g. "Visit store today!").
+- Do not include hashtags.`;
+
+    try {
+      if (!process.env.GEMINI_API_KEY) throw new Error('No Gemini Key');
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+      const result = await model.generateContent(prompt);
+      aiText = result.response.text();
+    } catch (geminiError) {
+      console.warn('Gemini failed for Campaign Generator, falling back to Groq:', geminiError.message);
+      if (!process.env.GROQ_API_KEY) throw new Error('No Groq Key available for fallback');
+      const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+      const chatCompletion = await groq.chat.completions.create({
+        messages: [{ role: 'user', content: prompt }],
+        model: 'qwen/qwen3.8-27b',
+        temperature: 0.7
+      });
+      aiText = chatCompletion.choices[0]?.message?.content || 'Special Offer! Visit us today to claim your discount.';
+    }
+
+    // Still use the hardcoded generateCampaign function to get the structure, but overwrite the copy_text
     const campaign = generateCampaign(occasion, discount_pct, store_name);
+    campaign.copy_text = aiText;
+    
     res.json({ campaign });
   } catch (error) {
     console.error('Error generating campaign:', error);
@@ -36,40 +78,29 @@ router.post('/broadcast', async (req, res) => {
     }
 
     // Determine target customers
-    const customers = await getCustomersByTier(audience_tier);
+    const storeId = storeOf(req);
+    await ensureDemoCustomers(storeId);
+    const customers = await getCustomersByTier(audience_tier, storeId);
     const recipientsCount = customers.length;
-    
-    // In sandbox, we can only message the registered RECIPIENT_PHONE
-    const recipientPhone = process.env.RECIPIENT_PHONE;
 
     let status = 'sent';
-    let wamid = null;
     let message = '';
 
     if (recipientsCount === 0) {
       status = 'failed';
       message = 'No customers found in the selected tier.';
     } else {
-      if (!recipientPhone) {
-        status = 'simulated';
-        console.warn('RECIPIENT_PHONE not configured. Simulating broadcast.');
-        message = `Simulated broadcast to ${recipientsCount} customers.`;
+      // Sandbox limits real delivery to the merchant's own number; report what was really delivered.
+      const r = await notifyMerchant({
+        title: campaign.title || `Campaign: ${audience_tier}`,
+        body: `Broadcast to ${recipientsCount} customers.\n${campaign.copy_text.replace(/\{customer_name\}/g, 'Customer')}`
+      });
+      const channels = ['whatsapp', 'sms', 'email'].filter(c => r[c] === 'sent');
+      if (channels.length) {
+        message = `Broadcast to ${recipientsCount} customers — delivered via ${channels.join(' + ')}.`;
       } else {
-        // Send a single real WhatsApp message to the test recipient representing the broadcast
-        try {
-          const result = await sendCampaignBroadcast(campaign, campaign.copy_text, recipientPhone);
-          wamid = result.wamid;
-          message = `Broadcasted to 1 sandbox recipient representing ${recipientsCount} customers.`;
-        } catch (waError) {
-          console.error('Broadcast WhatsApp Error:', waError);
-          if (waError.message.includes('Token Expired') || waError.message.includes('Authentication Error')) {
-            status = 'simulated';
-            message = `Simulated broadcast to ${recipientsCount} customers. (Meta Token Expired)`;
-          } else {
-            status = 'failed';
-            message = `Broadcast failed: ${waError.message}`;
-          }
-        }
+        status = 'failed';
+        message = `Broadcast failed on every channel. WhatsApp: ${r.whatsapp}; SMS: ${r.sms}; Email: ${r.email}`;
       }
     }
 
@@ -82,7 +113,7 @@ router.post('/broadcast', async (req, res) => {
     };
     await saveCampaign(campaignToSave);
 
-    res.json({ status: 'ok', message, campaign: campaignToSave, wamid });
+    res.json({ status: 'ok', message, campaign: campaignToSave });
   } catch (error) {
     console.error('Error broadcasting campaign:', error);
     res.status(500).json({ error: 'Failed to broadcast campaign' });

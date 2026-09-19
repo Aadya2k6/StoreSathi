@@ -143,4 +143,57 @@ const sendCampaignBroadcast = async (campaign, copyText, recipientPhone) => {
   }
 };
 
-module.exports = { sendOpportunityAlert, sendCampaignBroadcast };
+const sendRecommendationAlert = async (rec) => {
+  if (!WHATSAPP_TOKEN || !PHONE_NUMBER_ID || !RECIPIENT_PHONE) {
+    throw new Error('Missing WhatsApp environment variables');
+  }
+
+  const payload = {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to: RECIPIENT_PHONE,
+    type: "interactive",
+    interactive: {
+      type: "button",
+      body: {
+        text: `*${rec.title}*\n\nTake action immediately to optimize your store inventory.`
+      },
+      footer: {
+        text: "StoreSathi Command Center"
+      },
+      action: {
+        buttons: [
+          {
+            type: "reply",
+            reply: {
+              id: `approve_rec_${rec.id}`,
+              title: "✅ Approve"
+            }
+          }
+        ]
+      }
+    }
+  };
+
+  try {
+    const response = await axios.post(
+      `https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`,
+      payload,
+      {
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const wamid = response.data.messages?.[0]?.id;
+    console.log(`WhatsApp: Sent recommendation alert for ${rec.id} (wamid: ${wamid})`);
+    return { ok: true, wamid };
+  } catch (error) {
+    console.error('WhatsApp API Error:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.error?.message || 'Failed to send WhatsApp message');
+  }
+};
+
+module.exports = { sendOpportunityAlert, sendCampaignBroadcast, sendRecommendationAlert };

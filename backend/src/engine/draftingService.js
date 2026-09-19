@@ -36,6 +36,12 @@ const generateDraft = (opp) => {
     draft.action = `Run a limited-time 15% discount campaign to clear stale inventory.`;
   }
 
+  else if (opp.type === 'low_stock') {
+    draft.headline = `Low Stock Alert for ${opp.product_name}`;
+    draft.reason = `The page shows "${details.stock_status}". Selling out unnoticed means lost sales and wasted ad spend.`;
+    draft.action = `Restock ${opp.product_name} soon, or pause promotions on it until new stock arrives.`;
+  }
+
   else if (opp.type === 'price_watch') {
     const ratingStr = details.rating > 0 ? ` It holds a ${details.rating}/5 rating with ${details.reviews_count} reviews.` : '';
     draft.headline = `Market Intelligence: ${opp.product_name}`;
